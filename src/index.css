@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Be Vietnam Pro", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-brand-primary: #FFC72C;
+  --color-brand-secondary: #003B73;
+  --color-brand-accent: #0056A8;
+  --color-navy: #163F78;
+  --color-navy-light: #1a4a8a;
+  --color-navy-dark: #0f2d5c;
+  --color-premium-bg: #FFFFFF;
+  --color-premium-surface: #FFFFFF;
+  --color-premium-hover: #F1F5F9;
+  --color-premium-border: #E2E8F0;
+  --color-text-main: #0F172A;
+  --color-text-navy: #003B73;
+  --color-text-dim: #64748B;
+  
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+  
+  body {
+    @apply bg-premium-bg text-text-main antialiased font-sans transition-colors duration-500;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight font-semibold;
+  }
+
+  /* Premium Scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-brand-secondary/20 rounded-full transition-colors;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-brand-primary/40;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .premium-shadow {
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.04);
+  }
+
+  .custom-scrollbar-thin::-webkit-scrollbar {
+    width: 3px;
+  }
+  .custom-scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 rounded-full;
+  }
+
+  /* Hide caret/text cursor on interactive elements */
+  .no-caret, .no-caret * {
+    caret-color: transparent !important;
+  }
+  .no-caret:focus, .no-caret:focus * {
+    outline: none !important;
+  }
+  /* Subcategory carousel cards - no focus ring/outline */
+  .subcategory-card:focus-visible,
+  .subcategory-card:focus-visible * {
+    outline: none !important;
+    box-shadow: none !important;
+    ring: none !important;
+    border: none !important;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out both;
+}
