@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getProjectImages } from '../lib/supabase';
+import { getProjectImages } from '../lib/imageService';
 
 export function useSupabaseImages() {
   const [images, setImages] = useState<string[]>([]);

@@ -1,25 +1,44 @@
+/**
+ * RegisterModal.tsx
+ * 
+ * Modal đăng ký với Supabase Auth
+ * Giữ nguyên UI hiện tại, chỉ thay đổi logic xử lý
+ */
+
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Mail, Lock, Eye, EyeOff, User, ChevronDown, ArrowLeft, Check, MapPin, Phone, Edit2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Address, PROVINCES, DISTRICTS, WARDS } from '../types/auth';
 
+// ============================================
+// TYPES
+// ============================================
+
 interface RegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
-  prefilledEmail?: string;
   onSuccess?: () => void;
 }
 
+// Các bước của form đăng ký
 type Step = 'account' | 'address';
 
-export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', onSuccess }: RegisterModalProps) {
-  const { register, checkEmailExists, checkPhoneExists } = useAuth();
+// ============================================
+// COMPONENT
+// ============================================
+
+export default function RegisterModal({ isOpen, onClose, onSuccess }: RegisterModalProps) {
+  const { register, addAddress } = useAuth();
+
+  // ============================================
+  // STATE
+  // ============================================
 
   const [step, setStep] = useState<Step>('account');
   const [formData, setFormData] = useState({
     fullName: '',
-    email: prefilledEmail || '',
+    email: '',
     phone: '',
     password: '',
     confirmPassword: '',
@@ -33,19 +52,25 @@ export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', on
     streetAddress: '',
     deliveryNote: '',
   });
+  
   // Custom receiver state
   const [useCustomReceiver, setUseCustomReceiver] = useState(false);
   const [customReceiverName, setCustomReceiverName] = useState('');
   const [customReceiverPhone, setCustomReceiverPhone] = useState('');
+  
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [globalError, setGlobalError] = useState('');
+
+  // ============================================
+  // RESET FORM
+  // ============================================
 
   const resetForm = () => {
     setStep('account');
     setFormData({
       fullName: '',
-      email: prefilledEmail || '',
+      email: '',
       phone: '',
       password: '',
       confirmPassword: '',
@@ -70,57 +95,44 @@ export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', on
     onClose();
   };
 
+  // ============================================
+  // VALIDATION
+  // ============================================
+
   const validateAccountStep = (): boolean => {
     const newErrors: Record<string, string> = {};
 
+    // Full Name
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Vui lòng nhập họ tên';
     }
 
+    // Email
     if (!formData.email.trim()) {
       newErrors.email = 'Vui lòng nhập email';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Email không hợp lệ';
-    } else if (checkEmailExists(formData.email)) {
-      newErrors.email = 'Email này đã được sử dụng';
     }
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Vui lòng nhập số điện thoại';
-    } else if (!/^0[0-9]{9}$/.test(formData.phone)) {
+    // Phone (optional for registration, but validate if provided)
+    if (formData.phone.trim() && !/^0[0-9]{9}$/.test(formData.phone)) {
       newErrors.phone = 'Số điện thoại không hợp lệ (phải có 10 số, bắt đầu bằng 0)';
-    } else if (checkPhoneExists(formData.phone)) {
-      newErrors.phone = 'Số điện thoại này đã được sử dụng';
     }
 
+    // Password
     if (!formData.password) {
       newErrors.password = 'Vui lòng nhập mật khẩu';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
     }
 
+    // Confirm Password
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Mật khẩu không khớp';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const handleEmailBlur = () => {
-    if (formData.email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      if (checkEmailExists(formData.email)) {
-        setErrors(prev => ({ ...prev, email: 'Email này đã được sử dụng' }));
-      }
-    }
-  };
-
-  const handlePhoneBlur = () => {
-    if (formData.phone.trim() && /^0[0-9]{9}$/.test(formData.phone)) {
-      if (checkPhoneExists(formData.phone)) {
-        setErrors(prev => ({ ...prev, phone: 'Số điện thoại này đã được sử dụng' }));
-      }
-    }
   };
 
   const validateAddressStep = (): boolean => {
@@ -163,6 +175,10 @@ export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', on
     return Object.keys(newErrors).length === 0;
   };
 
+  // ============================================
+  // HANDLERS
+  // ============================================
+
   const handleNextStep = () => {
     if (validateAccountStep()) {
       setStep('address');
@@ -170,29 +186,58 @@ export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', on
   };
 
   const handleSkipAddress = () => {
-    // Skip address step - proceed with registration without address
-    handleSubmitWithoutAddress();
+    handleSubmit();
   };
 
-  const handleSubmitWithoutAddress = async () => {
+  const handleSubmit = async () => {
     setGlobalError('');
     setIsLoading(true);
 
-    const result = await register({
-      fullName: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      password: formData.password,
-      addresses: [],
-    });
+    try {
+      // Đăng ký với Supabase Auth
+      const result = await register(formData.email.trim(), formData.password, formData.fullName);
 
-    setIsLoading(false);
+      if (!result.success) {
+        setGlobalError(result.error || 'Đăng ký thất bại');
+        setIsLoading(false);
+        return;
+      }
 
-    if (result.success) {
+      // Nếu có thông báo xác minh email (Supabase gửi email xác minh)
+      if (result.error && result.error.includes('xác minh')) {
+        // Đăng ký thành công nhưng cần xác minh email
+        onSuccess?.();
+        handleClose();
+        return;
+      }
+
+      // Đăng ký thành công - thêm address nếu có
+      const hasAddress = address.province || address.streetAddress;
+      if (hasAddress && validateAddressStep()) {
+        const receiverName = useCustomReceiver ? customReceiverName : formData.fullName;
+        const receiverPhone = useCustomReceiver ? customReceiverPhone : formData.phone;
+
+        const newAddress: Address = {
+          id: Math.random().toString(36).substring(2, 15),
+          recipientName: receiverName,
+          phone: receiverPhone,
+          province: address.province,
+          district: address.district,
+          ward: address.ward,
+          streetAddress: address.streetAddress,
+          deliveryNote: address.deliveryNote,
+          isDefault: true,
+        };
+
+        addAddress(newAddress);
+      }
+
       onSuccess?.();
       handleClose();
-    } else {
-      setGlobalError(result.error || 'Đăng ký thất bại');
+    } catch (err) {
+      setGlobalError('Có lỗi xảy ra. Vui lòng thử lại.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -200,58 +245,15 @@ export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', on
     setStep('account');
   };
 
-  const handleSubmit = async () => {
-    // If no address filled, skip address step
-    const hasAddress = address.province || address.streetAddress;
-    if (!hasAddress) {
-      handleSubmitWithoutAddress();
-      return;
-    }
-
-    if (!validateAddressStep()) return;
-
-    setGlobalError('');
-    setIsLoading(true);
-
-    // Determine receiver name and phone
-    const receiverName = useCustomReceiver ? customReceiverName : formData.fullName;
-    const receiverPhone = useCustomReceiver ? customReceiverPhone : formData.phone;
-
-    const newAddress: Address = {
-      id: Math.random().toString(36).substring(2, 15),
-      recipientName: receiverName,
-      phone: receiverPhone,
-      province: address.province,
-      district: address.district,
-      ward: address.ward,
-      streetAddress: address.streetAddress,
-      deliveryNote: address.deliveryNote,
-      isDefault: true,
-    };
-
-    const result = await register({
-      fullName: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      password: formData.password,
-      addresses: [newAddress],
-    });
-
-    setIsLoading(false);
-
-    if (result.success) {
-      onSuccess?.();
-      handleClose();
-    } else {
-      setGlobalError(result.error || 'Đăng ký thất bại');
-    }
-  };
-
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && step === 'account') {
       handleNextStep();
     }
   };
+
+  // ============================================
+  // RENDER
+  // ============================================
 
   return (
     <>
@@ -331,7 +333,9 @@ export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', on
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto px-8 pb-8">
                   <AnimatePresence mode="wait">
-                    {/* Step 1: Account Info */}
+                    {/* ============================================ */}
+                    {/* STEP 1: ACCOUNT INFO */}
+                    {/* ============================================ */}
                     {step === 'account' && (
                       <motion.div
                         key="account"
@@ -375,7 +379,6 @@ export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', on
                               value={formData.email}
                               onChange={(e) => {
                                 setFormData({ ...formData, email: e.target.value });
-                                // Clear error when user starts typing
                                 if (errors.email) {
                                   setErrors(prev => {
                                     const newErrors = { ...prev };
@@ -384,7 +387,6 @@ export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', on
                                   });
                                 }
                               }}
-                              onBlur={handleEmailBlur}
                               placeholder="nguyen@example.com"
                               className={`w-full pl-11 pr-4 py-3.5 border rounded-xl text-sm transition-all outline-none
                                 ${errors.email
@@ -396,10 +398,10 @@ export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', on
                           {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
                         </div>
 
-                        {/* Phone */}
+                        {/* Phone (Optional) */}
                         <div>
                           <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">
-                            Số điện thoại
+                            Số điện thoại (tùy chọn)
                           </label>
                           <div className="relative">
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">+84</span>
@@ -408,7 +410,6 @@ export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', on
                               value={formData.phone}
                               onChange={(e) => {
                                 setFormData({ ...formData, phone: e.target.value });
-                                // Clear error when user starts typing
                                 if (errors.phone) {
                                   setErrors(prev => {
                                     const newErrors = { ...prev };
@@ -417,7 +418,6 @@ export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', on
                                   });
                                 }
                               }}
-                              onBlur={handlePhoneBlur}
                               placeholder="901234567"
                               className={`w-full pl-14 pr-4 py-3.5 border rounded-xl text-sm transition-all outline-none
                                 ${errors.phone
@@ -486,10 +486,17 @@ export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', on
                           </div>
                           {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
                         </div>
+
+                        {/* Global Error */}
+                        {globalError && (
+                          <p className="text-sm text-red-500 bg-red-50 px-4 py-2 rounded-lg">{globalError}</p>
+                        )}
                       </motion.div>
                     )}
 
-                    {/* Step 2: Address */}
+                    {/* ============================================ */}
+                    {/* STEP 2: ADDRESS */}
+                    {/* ============================================ */}
                     {step === 'address' && (
                       <motion.div
                         key="address"
@@ -504,7 +511,7 @@ export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', on
                             <div>
                               <p className="text-xs text-slate-500 mb-1">Người nhận</p>
                               <p className="font-semibold text-slate-800">
-                                {formData.fullName} - +84{formData.phone}
+                                {formData.fullName} {formData.phone && `- +84${formData.phone}`}
                               </p>
                             </div>
                             {!useCustomReceiver ? (
@@ -589,13 +596,14 @@ export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', on
                           onChange={setAddress}
                           errors={errors}
                         />
+
+                        {/* Global Error */}
+                        {globalError && (
+                          <p className="text-sm text-red-500 bg-red-50 px-4 py-2 rounded-lg">{globalError}</p>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
-
-                  {globalError && (
-                    <p className="text-sm text-red-500 bg-red-50 px-4 py-3 rounded-xl mt-4">{globalError}</p>
-                  )}
                 </div>
 
                 {/* Footer */}
@@ -638,7 +646,10 @@ export default function RegisterModal({ isOpen, onClose, prefilledEmail = '', on
   );
 }
 
-// Address fields form (simplified - no recipient name/phone)
+// ============================================
+// ADDRESS FIELDS FORM
+// ============================================
+
 interface AddressFieldsFormProps {
   address: {
     province: string;
