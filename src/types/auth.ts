@@ -1,4 +1,14 @@
-// Authentication types for Mecsu
+/**
+ * auth.ts
+ * 
+ * Type definitions cho Authentication
+ * KHÔNG chứa password - dùng Supabase Auth để quản lý
+ */
+
+// ============================================
+// ĐỊA CHỈ (ADDRESS)
+// ============================================
+
 export interface Address {
   id: string;
   recipientName: string;
@@ -11,25 +21,53 @@ export interface Address {
   isDefault: boolean;
 }
 
+// ============================================
+// USER (SUPABASE AUTH)
+// ============================================
+
+/**
+ * User interface - dùng cho app state
+ * Lưu ý: KHÔNG lưu password ở đây
+ * Supabase Auth quản lý password riêng
+ */
 export interface User {
   id: string;
-  fullName: string;
   email: string;
+  fullName: string;
   phone: string;
-  password: string;
   addresses: Address[];
   createdAt: string;
+  // Metadata từ Supabase
+  lastSignInAt?: string;
+  emailConfirmed?: boolean;
 }
+
+// ============================================
+// AUTH STATE
+// ============================================
 
 export interface AuthState {
   isLoggedIn: boolean;
   user: User | null;
 }
 
+// ============================================
+// STORAGE KEYS
+// ============================================
+
+/**
+ * Keys cho localStorage
+ * Chỉ dùng cho data không liên quan đến password
+ */
 export const STORAGE_KEYS = {
-  USERS: 'mecsu_users',
+  // User profile (không có password)
   CURRENT_USER: 'mecsu_current_user',
+  // Cart, orders, etc. vẫn dùng localStorage
 } as const;
+
+// ============================================
+// VIETNAM ADDRESS DATA
+// ============================================
 
 export const PROVINCES = [
   { id: 'hcm', name: 'TP. Hồ Chí Minh' },
@@ -96,3 +134,25 @@ export const WARDS: Record<string, { id: string; name: string }[]> = {
     { id: 'tan phu', name: 'Tân Phú' },
   ],
 };
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Tạo User object từ Supabase user
+ */
+export function createUserFromSupabase(
+  supabaseUser: { id: string; email?: string; user_metadata?: Record<string, any> },
+  additionalData?: Partial<User>
+): User {
+  return {
+    id: supabaseUser.id,
+    email: supabaseUser.email || '',
+    fullName: supabaseUser.user_metadata?.full_name || '',
+    phone: supabaseUser.user_metadata?.phone || '',
+    addresses: [],
+    createdAt: new Date().toISOString(),
+    ...additionalData,
+  };
+}

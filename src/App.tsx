@@ -31,6 +31,7 @@ const ResourceHubNavbar = lazy(() => import('./components/resource-hub/ResourceH
 const ResourceHubFooter = lazy(() => import('./components/resource-hub/ResourceHubFooter'));
 const Footer = lazy(() => import('./components/Footer'));
 const OrderTrackingModal = lazy(() => import('./components/OrderTrackingModal'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const CategoryPage = lazy(() => import('./pages/CategoryPage'));
 const SubcategoryPage = lazy(() => import('./pages/SubcategoryPage'));
 const SearchResults = lazy(() => import('./pages/SearchResults'));
@@ -494,6 +495,10 @@ const isCartView = false; // Always render Header and Footer
               ) : (
                 <Navigate to="/" />
               )
+            } />
+
+            <Route path="/reset-password" element={
+              <ResetPasswordPage />
             } />
 
             <Route path="/danh-muc/:categoryId" element={
