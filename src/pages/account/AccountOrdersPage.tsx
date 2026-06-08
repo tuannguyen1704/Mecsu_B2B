@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { DesktopSidebar, MobileSidebar } from './components/AccountSidebar';
-import { Breadcrumbs } from './components/Breadcrumbs';
 import { OrderTabs } from './components/OrderTabs';
 import { OrdersTab } from './components/OrdersTab';
 import { ReorderItemsTab } from './components/ReorderItemsTab';
@@ -68,12 +67,6 @@ const AccountOrdersPage: React.FC = () => {
     returns: returnRequests.length,
   };
 
-  const breadcrumbsItems = [
-    { label: 'Trang chủ', href: '/' },
-    { label: 'Tài khoản', href: '/tai-khoan' },
-    { label: 'Đơn hàng' },
-  ];
-
   // Build user info for sidebar from auth
   const userInfo = user
     ? { id: user.id, name: user.fullName, email: user.email, role: 'Khách hàng Mecsu' }
@@ -95,15 +88,10 @@ const AccountOrdersPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-4 lg:px-6 py-6 lg:py-8">
-        {/* Breadcrumbs */}
-        <div className="mb-6">
-          <Breadcrumbs items={breadcrumbsItems} />
-        </div>
-
+      <div className="max-w-[1440px] mx-auto px-4 lg:px-6 pt-1 pb-3 lg:pt-2 lg:pb-4">
         {/* Page Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 mb-2">
+        <div className="mb-4">
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 mb-1">
             Đơn hàng của tôi
           </h1>
           <p className="text-slate-500">
@@ -112,14 +100,14 @@ const AccountOrdersPage: React.FC = () => {
         </div>
 
         {/* Main Layout - Flex */}
-        <div className="flex gap-6 lg:gap-8 items-start">
+        <div className="flex gap-4 lg:gap-5 items-start">
           {/* Desktop Sidebar - always visible on lg+ */}
           <DesktopSidebar user={userInfo} />
 
           {/* Content - takes remaining space */}
           <main className="flex-1 min-w-0 w-full">
             {/* Tabs */}
-            <div className="mb-6">
+            <div className="mb-4">
               <OrderTabs 
                 activeTab={activeTab} 
                 onTabChange={setActiveTab}

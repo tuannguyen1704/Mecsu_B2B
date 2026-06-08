@@ -63,7 +63,7 @@ export function Modal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
           {/* Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -83,7 +83,7 @@ export function Modal({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
             className={cn(
-              'relative w-full max-w-[640px] max-h-[calc(100vh-32px)] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col',
+              'relative z-[401] w-full max-w-[640px] max-h-[calc(100vh-32px)] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col',
               sizeClasses[size],
               className
             )}
@@ -153,7 +153,7 @@ export function Drawer({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[1000]">
+        <div className="fixed inset-0 z-[400]">
           {/* Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -170,7 +170,7 @@ export function Drawer({
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             className={cn(
-              'absolute right-0 top-0 h-full bg-white shadow-2xl overflow-y-auto',
+              'relative z-[401] h-full bg-white shadow-2xl overflow-y-auto',
               drawerWidths[width],
               className
             )}

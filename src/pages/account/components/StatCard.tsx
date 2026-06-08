@@ -33,15 +33,15 @@ export const StatCard: React.FC<StatCardProps> = ({
 }) => {
   return (
     <div className={cn(
-      "bg-white rounded-2xl border border-slate-200 p-5 hover:border-[#163F78]/30 transition-all duration-300 group",
+      "bg-white rounded-2xl border border-slate-200 p-3 lg:p-3.5 hover:border-[#163F78]/30 transition-all duration-300 group",
       className
     )}>
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
         <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110",
+          "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110",
           iconColorClasses[iconColor]
         )}>
-          <Icon size={22} />
+          <Icon size={20} />
         </div>
         
         {trend && (
@@ -56,9 +56,9 @@ export const StatCard: React.FC<StatCardProps> = ({
         )}
       </div>
       
-      <div className="mt-4">
-        <p className="text-3xl font-bold text-slate-900">{value}</p>
-        <p className="text-sm text-slate-500 mt-1">{label}</p>
+      <div className="mt-2">
+        <p className="text-2xl lg:text-3xl font-bold text-slate-900">{value}</p>
+        <p className="text-sm text-slate-500 mt-0.5">{label}</p>
       </div>
     </div>
   );

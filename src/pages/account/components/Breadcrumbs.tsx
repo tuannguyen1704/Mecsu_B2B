@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronRight, Home } from 'lucide-react';
+import { ChevronRight, Home, ArrowLeft } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
 interface BreadcrumbItem {
@@ -12,10 +12,25 @@ interface BreadcrumbsProps {
   items?: BreadcrumbItem[];
   className?: string;
   showHome?: boolean;
+  showBackButton?: boolean;
 }
 
-export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items = [], className, showHome = true }) => {
+export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items = [], className, showHome = true, showBackButton = false }) => {
   const location = useLocation();
+
+  if (showBackButton) {
+    return (
+      <nav className={cn('flex items-center text-sm', className)}>
+        <Link
+          to="/"
+          className="flex items-center gap-1.5 text-slate-500 hover:text-[#163F78] transition-colors font-medium"
+        >
+          <ArrowLeft size={16} className="text-slate-400" />
+          <span>Quay lại</span>
+        </Link>
+      </nav>
+    );
+  }
   
   const defaultItems: BreadcrumbItem[] = showHome
     ? [

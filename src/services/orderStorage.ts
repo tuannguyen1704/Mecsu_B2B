@@ -1,4 +1,5 @@
 import { Order } from '../types';
+import { PRODUCTS } from '../constants';
 
 const STORAGE_PREFIX = 'mecsu_orders_';
 
@@ -101,7 +102,7 @@ export const orderStorage = {
         id: `order-demo-1-${Date.now()}`,
         orderCode: `MEC${new Date().toISOString().slice(0, 10).replace(/-/g, '')}001`,
         orderDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        status: 'completed',
+        status: 'pending',
         totalAmount: 2850000,
         paymentMethod: 'Thanh toán khi nhận hàng (COD)',
         shippingAddress: '123 Đường Nguyễn Trãi, Quận 1, TP.HCM',
@@ -186,7 +187,7 @@ export const orderStorage = {
    */
   getOrderByCode(userId: string, orderCode: string): Order | null {
     const orders = this.getOrders(userId);
-    return orders.find(o => o.orderCode === orderCode) || null;
+    return orders.find(o => o.orderCode === orderCode || o.id === orderCode) || null;
   },
 
   /**
@@ -259,14 +260,18 @@ export const orderStorage = {
       shippingAddress: fullAddress,
       recipientName: receiverName,
       phone: phone,
-      items: checkoutData.items.map((item, index) => ({
-        id: `${checkoutData.orderId}-item-${index}`,
-        name: item.name,
-        sku: item.sku,
-        quantity: item.quantity,
-        price: item.price,
-        image: item.image || '',
-      })),
+      items: checkoutData.items.map((item, idx) => {
+        // Resolve real product id from sku in PRODUCTS catalog
+        const catalogProduct = PRODUCTS.find(p => p.sku === item.sku || p.id === item.sku);
+        return {
+          id: catalogProduct?.id || item.sku || `unknown-${idx}`,
+          name: item.name,
+          sku: item.sku,
+          quantity: item.quantity,
+          price: item.price,
+          image: item.image || '',
+        };
+      }),
     };
 
     return order;

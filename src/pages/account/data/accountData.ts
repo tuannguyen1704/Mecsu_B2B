@@ -1,5 +1,6 @@
 import { LucideIcon } from 'lucide-react';
 import { Package, CheckCircle, Heart, FileText, Truck, Receipt, Phone, Search } from 'lucide-react';
+import { Address } from '../../types/auth';
 
 // Account Dashboard Stats
 export interface AccountStats {
@@ -15,6 +16,43 @@ export const accountStats: AccountStats = {
   wishlistItems: 12,
   quotes: 2,
 };
+
+// Mock addresses for demo
+export const mockAddresses: Address[] = [
+  {
+    id: 'addr-001',
+    recipientName: 'Nguyễn Văn Minh',
+    phone: '0909123456',
+    province: 'TP.HCM',
+    district: 'Quận 7',
+    ward: 'Tân Thuận Đông',
+    streetAddress: '123 Đường Nguyễn Trãi, P.Tân Thuận Đông',
+    deliveryNote: 'Giao giờ hành chính',
+    isDefault: true,
+  },
+  {
+    id: 'addr-002',
+    recipientName: 'Trần Thị Lan',
+    phone: '0912345678',
+    province: 'TP.HCM',
+    district: 'Quận 1',
+    ward: 'Bến Nghé',
+    streetAddress: '456 Đường Lê Lợi, Q.1',
+    deliveryNote: 'Gọi trước khi giao',
+    isDefault: false,
+  },
+  {
+    id: 'addr-003',
+    recipientName: 'Công Ty TNHH Mecsu',
+    phone: '02812345678',
+    province: 'TP.HCM',
+    district: 'Quận Bình Thạnh',
+    ward: 'Phường 1',
+    streetAddress: '789 Đường Xô Viết Nghệ Tĩnh, P.1, Q.Bình Thạnh',
+    deliveryNote: 'Nhận hàng tại bãi xe tầng trệt',
+    isDefault: false,
+  },
+];
 
 // Quick Actions
 export interface QuickAction {
@@ -33,7 +71,7 @@ export const quickActions: QuickAction[] = [
     subtitle: 'Kiểm tra tình trạng giao hàng',
     icon: Truck,
     href: '/tai-khoan/don-hang',
-    variant: 'primary',
+    variant: 'secondary',
   },
   {
     id: 'request-quote',
@@ -185,10 +223,11 @@ export const accountModules: AccountModule[] = [
 
 // Order status configuration
 export const orderStatusConfig = {
-  processing: { label: 'Đang xử lý', variant: 'warning' as const, color: '#F59E0B' },
-  shipping: { label: 'Đang giao', variant: 'info' as const, color: '#3B82F6' },
-  completed: { label: 'Hoàn tất', variant: 'success' as const, color: '#10B981' },
-  cancelled: { label: 'Đã huỷ', variant: 'danger' as const, color: '#EF4444' },
+  pending:    { label: 'Đã đặt hàng',   variant: 'info'    as const, color: '#3B82F6' },
+  processing: { label: 'Đang xử lý',    variant: 'warning' as const, color: '#F59E0B' },
+  shipping:   { label: 'Đang giao',     variant: 'info'    as const, color: '#3B82F6' },
+  completed:  { label: 'Hoàn tất',      variant: 'success' as const, color: '#10B981' },
+  cancelled:  { label: 'Đã huỷ',       variant: 'danger'  as const, color: '#EF4444' },
 };
 
 // Helper function to format price

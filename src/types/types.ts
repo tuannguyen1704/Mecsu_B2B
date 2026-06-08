@@ -53,7 +53,7 @@ export interface BlogPost {
 }
 
 // Order types
-export type OrderStatus = 'processing' | 'shipping' | 'completed' | 'cancelled';
+export type OrderStatus = 'pending' | 'processing' | 'shipping' | 'completed' | 'cancelled';
 export type ReturnStatus = 'reviewing' | 'approved' | 'completed' | 'rejected';
 
 export interface ShippingAddress {

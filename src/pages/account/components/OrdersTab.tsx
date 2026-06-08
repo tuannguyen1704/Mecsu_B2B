@@ -3,14 +3,14 @@ import { Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Order, OrderStatus } from '../../../types';
 import { OrderCard } from './OrderCard';
 import { BestSellersSlider } from './BestSellersSlider';
+import { OrderReviewModal, ProductReview, OverallReview } from './OrderReviewModal';
 import { MOCK_BEST_SELLERS } from '../../../data/mockAccountData';
 import { cn } from '../../../lib/utils';
 
 interface OrdersTabProps {
   orders: Order[];
   onViewDetails?: (orderId: string) => void;
-  onReorder?: (orderId: string) => void;
-  onTrackShipping?: (orderId: string) => void;
+  onReview?: (orderId: string) => void;
 }
 
 type FilterStatus = 'all' | OrderStatus;
@@ -26,13 +26,17 @@ const filterOptions: { value: FilterStatus; label: string }[] = [
 export const OrdersTab: React.FC<OrdersTabProps> = ({
   orders,
   onViewDetails,
-  onReorder,
-  onTrackShipping,
+  onReview,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterStatus>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  // Review modal state
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewingOrder, setReviewingOrder] = useState<Order | null>(null);
+  const [reviewedOrderIds, setReviewedOrderIds] = useState<Set<string>>(new Set());
 
   const filteredOrders = useMemo(() => {
     let result = orders;
@@ -65,15 +69,32 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
     setCurrentPage(1);
   };
 
+  const handleReview = (orderId: string) => {
+    const order = orders.find((o) => o.id === orderId);
+    if (order) {
+      setReviewingOrder(order);
+      setReviewModalOpen(true);
+    }
+  };
+
+  const handleReviewSubmit = (reviews: ProductReview[], overallReview: OverallReview) => {
+    if (reviewingOrder) {
+      setReviewedOrderIds((prev) => new Set(prev).add(reviewingOrder.id));
+      console.log('Review submitted for order:', reviewingOrder.id, { reviews, overallReview });
+    }
+    setReviewModalOpen(false);
+    setReviewingOrder(null);
+  };
+
   const getStatusCount = (status: FilterStatus) => {
     if (status === 'all') return orders.length;
     return orders.filter(order => order.status === status).length;
   };
 
   return (
-    <div className="space-y-5 w-full max-w-full">
+    <div className="space-y-3 w-full max-w-full">
       {/* Search & Filter */}
-      <div className="bg-white rounded-2xl border border-[#E5EAF2] p-4 lg:p-6">
+      <div className="bg-white rounded-2xl border border-[#E5EAF2] p-3 lg:p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search Input */}
           <div className="flex-1 min-w-0">
@@ -87,7 +108,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full min-w-0 pl-12 pr-4 py-3 bg-slate-50 border border-[#E5EAF2] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#163F78]/20 focus:border-[#163F78] transition-all"
+                className="w-full min-w-0 pl-12 pr-4 py-3 bg-slate-50 border border-[#E5EAF2] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#3d82c4]/20 focus:border-[#3d82c4] transition-all"
               />
             </div>
           </div>
@@ -99,10 +120,10 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                 key={option.value}
                 onClick={() => handleFilterChange(option.value)}
                 className={cn(
-                  "px-3 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap",
+                  "px-4 py-2 h-10 rounded-xl text-sm font-medium transition-all whitespace-nowrap border",
                   activeFilter === option.value
-                    ? "bg-[#163F78] text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    ? "bg-[#163F78] text-white border-[#D9E5F6]"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 border-[#D9E5F6]"
                 )}
               >
                 {option.label}
@@ -115,14 +136,14 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
 
       {/* Orders List */}
       {paginatedOrders.length > 0 ? (
-        <div className="space-y-4 w-full max-w-full">
+        <div className="space-y-3 w-full max-w-full">
           {paginatedOrders.map((order) => (
             <OrderCard
               key={order.id}
               order={order}
               onViewDetails={onViewDetails}
-              onReorder={onReorder}
-              onTrackShipping={onTrackShipping}
+              onReview={handleReview}
+              reviewed={reviewedOrderIds.has(order.id)}
             />
           ))}
         </div>
@@ -153,10 +174,10 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                 key={page}
                 onClick={() => setCurrentPage(page)}
                 className={cn(
-                  "w-10 h-10 rounded-lg text-sm font-medium transition-colors",
+                  "w-10 h-10 rounded-lg text-sm font-medium transition-colors border",
                   currentPage === page
-                    ? "bg-[#163F78] text-white"
-                    : "text-slate-600 hover:bg-slate-100"
+                    ? "bg-[#163F78] text-white border-[#D9E5F6]"
+                    : "text-slate-600 hover:bg-slate-100 border-transparent"
                 )}
               >
                 {page}
@@ -175,6 +196,14 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
 
       {/* Best Sellers Section */}
       <BestSellersSlider products={MOCK_BEST_SELLERS} />
+
+      {/* Review Modal */}
+      <OrderReviewModal
+        isOpen={reviewModalOpen}
+        onClose={() => { setReviewModalOpen(false); setReviewingOrder(null); }}
+        order={reviewingOrder}
+        onSubmit={handleReviewSubmit}
+      />
     </div>
   );
 };

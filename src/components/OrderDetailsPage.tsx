@@ -1,13 +1,16 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Package, Truck, CheckCircle2, MapPin, Clock, ArrowLeft, ShieldCheck, PhoneCall, Copy, ExternalLink, Box } from 'lucide-react';
 
 interface OrderDetailsPageProps {
   orderId: string;
   onBackToHome: () => void;
+  onProductClick?: (productId: string) => void;
 }
 
-export default function OrderDetailsPage({ orderId, onBackToHome }: OrderDetailsPageProps) {
+export default function OrderDetailsPage({ orderId, onBackToHome, onProductClick }: OrderDetailsPageProps) {
+  const navigate = useNavigate();
   // Mock data for the specific order
   const orderDetails = {
     id: orderId || 'MEC-2024-8891',
@@ -16,8 +19,8 @@ export default function OrderDetailsPage({ orderId, onBackToHome }: OrderDetails
     total: 2450000,
     shippingFee: 30000,
     items: [
-      { id: 1, name: 'Bulong lục giác chìm inox 304 M8x30', price: 15000, qty: 100, image: 'https://images.unsplash.com/photo-1518709766631-a6a7f45921c3?w=200' },
-      { id: 2, name: 'Vít bắn tôn tự khoan đầu lục giác 12-14x50', price: 2000, qty: 500, image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=200' }
+      { id: 1, sku: '0043170', name: 'Bulong lục giác chìm inox 304 M8x30', price: 15000, qty: 100, image: 'https://images.unsplash.com/photo-1518709766631-a6a7f45921c3?w=200' },
+      { id: 2, sku: 'bulong-inox-001293', name: 'Vít bắn tôn tự khoan đầu lục giác 12-14x50', price: 2000, qty: 500, image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=200' }
     ],
     address: '2 Lê Hồng Phong, P. Tân Đông Hiệp, TP. Dĩ An, T. Bình Dương',
     customerName: 'Tuấn Nguyễn',
@@ -132,18 +135,22 @@ export default function OrderDetailsPage({ orderId, onBackToHome }: OrderDetails
               </h3>
               <div className="space-y-6">
                 {orderDetails.items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-6 p-4 rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                  <button
+                    key={item.id}
+                    onClick={() => onProductClick ? onProductClick(item.sku) : navigate(`/san-pham/${item.sku}`)}
+                    className="w-full flex items-center gap-6 p-4 rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 text-left"
+                  >
                     <div className="w-20 h-20 bg-white border border-slate-100 rounded-xl overflow-hidden shrink-0">
                       <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold text-slate-900 truncate uppercase tracking-tight">{item.name}</h4>
-                        <p className="text-xs text-slate-400 font-bold mt-1">SL: {item.qty} x {item.price.toLocaleString()}đ</p>
+                        <h4 className="text-sm font-bold text-[#163F78] truncate uppercase tracking-tight">{item.name}</h4>
+                        <p className="text-xs text-slate-400 font-bold mt-1">SKU: {item.sku} · SL: {item.qty} x {item.price.toLocaleString()}đ</p>
                     </div>
                     <div className="text-right">
                         <p className="text-sm font-black text-slate-900">{(item.qty * item.price).toLocaleString()}đ</p>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>

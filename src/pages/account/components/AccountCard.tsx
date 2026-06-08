@@ -35,16 +35,16 @@ export const AccountCard: React.FC<AccountCardProps> = ({
     <Link
       to={href}
       className={cn(
-        "bg-white rounded-2xl border border-slate-200 p-5 hover:border-[#163F78]/30 transition-all duration-300 group block",
+        "bg-white rounded-2xl border border-slate-200 p-3 hover:border-[#163F78]/30 transition-all duration-300 group block",
         className
       )}
     >
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-2.5">
         <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110",
+          "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110",
           iconColorClasses[iconColor]
         )}>
-          <Icon size={22} />
+          <Icon size={20} />
         </div>
         
         <div className="flex-1 min-w-0">
@@ -59,13 +59,13 @@ export const AccountCard: React.FC<AccountCardProps> = ({
             )}
           </div>
           {description && (
-            <p className="text-sm text-slate-500 mt-1 line-clamp-2">{description}</p>
+            <p className="text-sm text-slate-500 mt-0.5 line-clamp-2">{description}</p>
           )}
         </div>
         
         <ChevronRight 
           size={18} 
-          className="text-slate-300 group-hover:text-[#163F78] group-hover:translate-x-1 transition-all flex-shrink-0 mt-1" 
+          className="text-slate-300 group-hover:text-[#163F78] group-hover:translate-x-1 transition-all flex-shrink-0 mt-0.5" 
         />
       </div>
     </Link>

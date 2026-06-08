@@ -225,7 +225,7 @@ export const ProductFilterSidebar: React.FC = () => {
   return (
     <aside className="w-[300px] flex-shrink-0 lg:block hidden h-full">
       <div 
-        className="sticky top-[80px] h-[calc(100vh-80px)] flex flex-col bg-[#f5f5f5] border-r border-slate-200 overflow-hidden"
+        className="sticky top-4 h-[calc(100vh-32px)] flex flex-col bg-[#f5f5f5] border-r border-slate-200 overflow-hidden"
       >
         {/* Header - Industrial style */}
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-white">

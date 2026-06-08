@@ -1,15 +1,16 @@
 /**
  * RegisterModal.tsx
  * 
- * Modal đăng ký với Supabase Auth
+ * Modal đăng ký với localStorage
  * Giữ nguyên UI hiện tại, chỉ thay đổi logic xử lý
  */
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Mail, Lock, Eye, EyeOff, User, ChevronDown, ArrowLeft, Check, MapPin, Phone, Edit2 } from 'lucide-react';
+import { X, Mail, Lock, Eye, EyeOff, User, ChevronDown, ArrowLeft, Check, MapPin, Phone, Edit2, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Address, PROVINCES, DISTRICTS, WARDS } from '../types/auth';
+import { signUpDirect } from '../services/authService';
 
 // ============================================
 // TYPES
@@ -179,23 +180,14 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }: RegisterMo
   // HANDLERS
   // ============================================
 
-  const handleNextStep = () => {
-    if (validateAccountStep()) {
-      setStep('address');
-    }
-  };
+  const handleNextStep = async () => {
+    if (!validateAccountStep()) return;
 
-  const handleSkipAddress = () => {
-    handleSubmit();
-  };
-
-  const handleSubmit = async () => {
     setGlobalError('');
     setIsLoading(true);
 
     try {
-      // Đăng ký với Supabase Auth
-      const result = await register(formData.email.trim(), formData.password, formData.fullName);
+      const result = await signUpDirect(formData.email.trim(), formData.password, formData.fullName);
 
       if (!result.success) {
         setGlobalError(result.error || 'Đăng ký thất bại');
@@ -203,15 +195,25 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }: RegisterMo
         return;
       }
 
-      // Nếu có thông báo xác minh email (Supabase gửi email xác minh)
-      if (result.error && result.error.includes('xác minh')) {
-        // Đăng ký thành công nhưng cần xác minh email
-        onSuccess?.();
-        handleClose();
-        return;
-      }
+      // Success - go directly to address step
+      setStep('address');
+      setIsLoading(false);
+    } catch (err) {
+      setGlobalError('Có lỗi xảy ra. Vui lòng thử lại.');
+      setIsLoading(false);
+    }
+  };
 
-      // Đăng ký thành công - thêm address nếu có
+  const handleSkipAddress = () => {
+    handleCompleteRegistration();
+  };
+
+  const handleCompleteRegistration = async () => {
+    setGlobalError('');
+    setIsLoading(true);
+
+    try {
+      // Thêm address nếu có
       const hasAddress = address.province || address.streetAddress;
       if (hasAddress && validateAddressStep()) {
         const receiverName = useCustomReceiver ? customReceiverName : formData.fullName;
@@ -242,12 +244,16 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }: RegisterMo
   };
 
   const handlePrevStep = () => {
-    setStep('account');
+    if (step === 'address') {
+      setStep('account');
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && step === 'account') {
-      handleNextStep();
+    if (e.key === 'Enter') {
+      if (step === 'account') {
+        handleNextStep();
+      }
     }
   };
 
@@ -266,7 +272,7 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }: RegisterMo
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={handleClose}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[400]"
             />
 
             {/* Modal */}
@@ -275,7 +281,7 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }: RegisterMo
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+              className="fixed inset-0 z-[401] flex items-center justify-center p-4 pointer-events-none"
             >
               <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl pointer-events-auto overflow-hidden max-h-[90vh] flex flex-col">
                 {/* Header */}
@@ -297,7 +303,7 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }: RegisterMo
 
                   {/* Progress Steps */}
                   <div className="flex items-center gap-2 mb-4">
-                    <div className={`flex items-center gap-2 ${step === 'account' ? 'text-[#003B73]' : 'text-green-600'}`}>
+                    <div className={`flex items-center gap-2 ${step === 'address' ? 'text-green-600' : 'text-[#003B73]'}`}>
                       {step === 'address' ? (
                         <div className="w-6 h-6 rounded-full bg-green-600 text-white flex items-center justify-center">
                           <Check size={14} />
@@ -309,24 +315,25 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }: RegisterMo
                       )}
                       <span className="text-sm font-semibold">Tài khoản</span>
                     </div>
-                    <div className="flex-1 h-px bg-slate-200" />
-                    <div className={`flex items-center gap-2 ${step === 'address' ? 'text-[#003B73]' : 'text-slate-400'}`}>
-                      <div className="w-6 h-6 rounded-full border-2 border-current flex items-center justify-center text-xs font-bold">
-                        2
+                    {step === 'address' && <div className="flex-1 h-px bg-slate-200" />}
+                    {step === 'address' && (
+                      <div className={`flex items-center gap-2 text-[#003B73]`}>
+                        <div className="w-6 h-6 rounded-full border-2 border-current flex items-center justify-center text-xs font-bold">
+                          2
+                        </div>
+                        <span className="text-sm font-semibold">Địa chỉ</span>
                       </div>
-                      <span className="text-sm font-semibold">Địa chỉ</span>
-                    </div>
+                    )}
                   </div>
 
                   {/* Title */}
                   <h2 className="text-2xl font-bold text-slate-800 mb-1">
-                    {step === 'account' ? 'Tạo tài khoản' : 'Địa chỉ giao hàng'}
+                    {step === 'account' && 'Tạo tài khoản'}
+                    {step === 'address' && 'Địa chỉ giao hàng'}
                   </h2>
                   <p className="text-sm text-slate-500">
-                    {step === 'account'
-                      ? 'Nhập thông tin để đăng ký tài khoản'
-                      : 'Thêm địa chỉ giao hàng (tùy chọn)'
-                    }
+                    {step === 'account' && 'Nhập thông tin để đăng ký tài khoản'}
+                    {step === 'address' && 'Thêm địa chỉ giao hàng (tùy chọn)'}
                   </p>
                 </div>
 
@@ -626,7 +633,7 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }: RegisterMo
                     </button>
                   )}
                   <button
-                    onClick={step === 'account' ? handleNextStep : handleSubmit}
+                    onClick={step === 'account' ? handleNextStep : handleCompleteRegistration}
                     disabled={isLoading}
                     className={`flex-1 py-3.5 font-bold text-sm uppercase tracking-wider rounded-xl transition-colors disabled:opacity-60
                       ${step === 'account'
@@ -634,7 +641,16 @@ export default function RegisterModal({ isOpen, onClose, onSuccess }: RegisterMo
                         : 'bg-[#FFC72C] text-[#111827] hover:bg-[#E8B931]'
                       }`}
                   >
-                    {isLoading ? 'Đang xử lý...' : (step === 'account' ? 'Tiếp tục' : 'Hoàn tất đăng ký')}
+                    {isLoading ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin inline mr-2" />
+                        Đang xử lý...
+                      </>
+                    ) : step === 'account' ? (
+                      'Tiếp tục'
+                    ) : (
+                      'Hoàn tất đăng ký'
+                    )}
                   </button>
                 </div>
               </div>

@@ -28,22 +28,20 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({ children }) => {
         </div>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-4 lg:px-6 py-6 lg:py-8">
+      <div className="max-w-[1440px] mx-auto px-4 lg:px-6 pt-1 pb-3 lg:pt-2 lg:pb-4">
         {/* Main Layout */}
-        <div className="flex gap-6 lg:gap-8">
+        <div className="flex gap-4 lg:gap-4 items-start">
           {/* Desktop Sidebar - Sticky */}
           {user && (
-            <div className="hidden lg:block w-[280px] flex-shrink-0">
-              <div className="sticky top-8">
-                <AccountSidebar 
-                  user={{
-                    id: user.id,
-                    name: user.fullName,
-                    email: user.email,
-                    role: 'Khách hàng Mecsu'
-                  }}
-                />
-              </div>
+            <div className="hidden lg:block w-[280px] flex-shrink-0 self-start sticky top-4 max-h-[calc(100vh-1rem)]">
+              <AccountSidebar 
+                user={{
+                  id: user.id,
+                  name: user.fullName,
+                  email: user.email,
+                  role: 'Khách hàng Mecsu'
+                }}
+              />
             </div>
           )}
 

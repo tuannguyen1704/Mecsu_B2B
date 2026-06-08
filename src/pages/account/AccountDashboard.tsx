@@ -14,7 +14,6 @@ import {
   Plus
 } from 'lucide-react';
 import { AccountLayout } from './components/AccountLayout';
-import { Breadcrumbs } from './components/Breadcrumbs';
 import { StatCard } from './components/StatCard';
 import { AccountCard } from './components/AccountCard';
 import { Badge } from '../../components/ui/Badge';
@@ -50,11 +49,10 @@ const AccountDashboard: React.FC = () => {
 
   return (
     <AccountLayout>
-      <div className="space-y-6">
+      <div className="space-y-2">
         {/* Page Header */}
-        <div>
-          <Breadcrumbs />
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 mt-2">
+        <div className="space-y-0.5">
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">
             Tài khoản của tôi
           </h1>
           <p className="text-slate-500 mt-1">
@@ -63,7 +61,7 @@ const AccountDashboard: React.FC = () => {
         </div>
 
         {/* Stats Overview Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
             icon={Package}
             value={accountStats.openOrders}
@@ -92,8 +90,8 @@ const AccountDashboard: React.FC = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-2xl border border-[#E5EAF2] p-5">
-          <h2 className="text-lg font-bold text-slate-900 mb-4">Thao tác nhanh</h2>
+        <div className="bg-white rounded-2xl border border-[#E5EAF2] p-3 lg:p-4">
+          <h2 className="text-lg font-bold text-slate-900 mb-2">Thao tác nhanh</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {quickActions.map((action) => {
               const Icon = action.icon;
@@ -102,21 +100,21 @@ const AccountDashboard: React.FC = () => {
                   key={action.id}
                   to={action.href}
                   className={cn(
-                    "flex flex-col items-center gap-2 p-4 rounded-xl border border-[#E5EAF2] hover:border-[#163F78]/30 transition-all duration-300 group text-center",
+                    "flex flex-col items-center gap-1.5 p-3 rounded-xl border border-[#E5EAF2] hover:border-[#163F78]/30 transition-all duration-300 group text-center",
                     action.variant === 'primary'
                       ? "bg-[#163F78] border-[#163F78] hover:bg-[#1a4a8a]"
                       : "bg-white hover:border-[#163F78]/30"
                   )}
                 >
                   <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110",
+                    "w-9 h-9 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110",
                     action.variant === 'primary'
                       ? "bg-white/20 text-white"
                       : "bg-slate-100 text-slate-600 group-hover:bg-[#163F78]/10 group-hover:text-[#163F78]"
                   )}>
                     <Icon size={20} />
                   </div>
-                  <div className="space-y-0.5">
+                  <div className="space-y-0">
                     <span className={cn(
                       "block text-sm font-medium line-clamp-2",
                       action.variant === 'primary' ? "text-white" : "text-slate-700"
@@ -125,7 +123,7 @@ const AccountDashboard: React.FC = () => {
                     </span>
                     {action.subtitle && (
                       <span className={cn(
-                        "block text-[11px] line-clamp-1",
+                        "block text-[10px] line-clamp-1",
                         action.variant === 'primary' ? "text-white/70" : "text-slate-400"
                       )}>
                         {action.subtitle}
@@ -139,8 +137,8 @@ const AccountDashboard: React.FC = () => {
         </div>
 
         {/* Recent Orders */}
-        <div className="bg-white rounded-2xl border border-[#E5EAF2] p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-2xl border border-[#E5EAF2] p-3 lg:p-4">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold text-slate-900">Đơn hàng gần đây</h2>
             <Link 
               to="/tai-khoan/don-hang"
@@ -151,7 +149,7 @@ const AccountDashboard: React.FC = () => {
             </Link>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-3">
             {recentOrders.map((order) => {
               const status = orderStatusConfig[order.status];
               return (
@@ -199,8 +197,8 @@ const AccountDashboard: React.FC = () => {
         </div>
 
         {/* Quick Reorder */}
-        <div className="bg-white rounded-2xl border border-[#E5EAF2] p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-2xl border border-[#E5EAF2] p-3 lg:p-4">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold text-slate-900">Mua lại nhanh</h2>
             <Link 
               to="/tai-khoan/don-hang?tab=reorder"
@@ -211,7 +209,7 @@ const AccountDashboard: React.FC = () => {
             </Link>
           </div>
           
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {quickReorderProducts.map((product) => (
               <div 
                 key={product.id}
@@ -257,8 +255,8 @@ const AccountDashboard: React.FC = () => {
         </div>
 
         {/* Account Modules Grid */}
-        <div className="bg-white rounded-2xl border border-[#E5EAF2] p-5">
-          <h2 className="text-lg font-bold text-slate-900 mb-4">Quản lý tài khoản</h2>
+        <div className="bg-white rounded-2xl border border-[#E5EAF2] p-3 lg:p-4">
+          <h2 className="text-lg font-bold text-slate-900 mb-3">Quản lý tài khoản</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {accountModules.map((module) => (
               <AccountCard
