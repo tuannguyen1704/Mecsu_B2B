@@ -85,6 +85,7 @@ interface HeaderProps {
   onOrderAnimationComplete?: () => void;
   isLoggedIn?: boolean;
   userName?: string;
+  disableSticky?: boolean;
 }
 
 export default function Header({
@@ -104,6 +105,7 @@ export default function Header({
   isHomePage = false,
   orderJustCompleted = false,
   onOrderAnimationComplete = () => {},
+  disableSticky = false,
 }: HeaderProps) {
   const navigate = useNavigate();
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -161,7 +163,7 @@ export default function Header({
 
   return (
     <header 
-      className="w-full flex flex-col z-[300] sticky top-0"
+      className={`w-full flex flex-col z-[300] ${disableSticky ? "relative" : "sticky top-0"}`}
     >
       {/* 2. Main Premium Header */}
       <div className={`border-b border-slate-200 transition-all duration-300 ${isScrolled ? "bg-white/95 backdrop-blur-md shadow-sm" : "bg-white"}`}>
@@ -256,7 +258,10 @@ export default function Header({
             <div className="relative">
               {isLoggedIn ? (
                 <button
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  onClick={() => {
+                    setIsCategoryOpen(false);
+                    setIsProfileOpen(!isProfileOpen);
+                  }}
                   className="flex items-center gap-4 group"
                 >
                   <div className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center group-hover:border-brand-primary group-hover:bg-slate-50 transition-all shadow-sm">
@@ -277,7 +282,10 @@ export default function Header({
                 </button>
               ) : (
                 <button
-                  onClick={() => setIsLoginModalOpen(true)}
+                  onClick={() => {
+                    setIsCategoryOpen(false);
+                    setIsLoginModalOpen(true);
+                  }}
                   className="flex items-center gap-4 group"
                 >
                   <div className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center group-hover:border-brand-primary group-hover:bg-slate-50 transition-all shadow-sm">
@@ -315,6 +323,7 @@ export default function Header({
                   onMarkAllRead={onMarkAllRead}
                   onLoginClick={() => {
                     setIsProfileOpen(false);
+                    setIsCategoryOpen(false);
                     setIsLoginModalOpen(true);
                   }}
                 />
@@ -376,22 +385,22 @@ export default function Header({
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute top-16 right-0 w-[380px] bg-white rounded shadow-2xl border border-slate-200 z-50 overflow-hidden flex flex-col max-h-[600px]"
+                    className="absolute top-16 right-0 w-[340px] bg-white rounded shadow-2xl border border-slate-200 z-50 overflow-hidden flex flex-col max-h-[420px]"
                   >
-                    <div className="p-5 bg-white flex flex-col flex-shrink-0">
-                      <div className="flex items-center gap-2 mb-4 pr-6 relative">
-                        <CheckCircle2 size={18} className="text-[#0a823c]" strokeWidth={3} />
-                        <span className="text-[16px] font-bold text-slate-900 tracking-tight">Thêm vào giỏ hàng</span>
+                    <div className="p-4 bg-white flex flex-col flex-shrink-0">
+                      <div className="flex items-center gap-2 mb-2 pr-6 relative">
+                        <CheckCircle2 size={16} className="text-[#0a823c]" strokeWidth={3} />
+                        <span className="text-[14px] font-bold text-slate-900 tracking-tight">Thêm vào giỏ hàng</span>
                         <button 
                           onClick={onCloseCartPopup}
                           className="absolute right-0 text-slate-400 hover:text-slate-800 transition-colors"
                         >
-                          <X size={18} strokeWidth={3} />
+                          <X size={16} strokeWidth={3} />
                         </button>
                       </div>
 
-                      <div className="flex items-start gap-4 mb-6">
-                        <div className="w-[80px] h-[80px] bg-white rounded flex-shrink-0 flex items-center justify-center p-0">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-[64px] h-[64px] bg-white rounded flex-shrink-0 flex items-center justify-center p-0">
                           <img 
                             src={getRandomImage(cartPopupItem.product.name)} 
                             alt={cartPopupItem.product.name} 
@@ -399,24 +408,24 @@ export default function Header({
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-[14px] font-medium text-[#2071a7] leading-snug mb-1 cursor-pointer">
+                          <h4 className="text-[13px] font-medium text-[#2071a7] leading-snug mb-1 cursor-pointer">
                             {cartPopupItem.product.name}
                           </h4>
-                          <div className="text-[14px] text-slate-900 font-bold">
+                          <div className="text-[13px] text-slate-900 font-bold">
                             SL: {cartPopupItem.quantity}
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-2">
                         <button 
                           onClick={() => {
                             onCloseCartPopup();
                             onNavigateToCheckout();
                           }}
-                          className="w-full bg-[#C55A2B] text-white py-2.5 rounded shadow-sm font-bold text-[14px] hover:bg-[#a84a22] transition-colors flex items-center justify-center gap-2 tracking-wide"
+                          className="w-full bg-[#C55A2B] text-white py-2 rounded shadow-sm font-bold text-[13px] hover:bg-[#a84a22] transition-colors flex items-center justify-center gap-2 tracking-wide"
                         >
-                          <Lock size={15} className="mb-[1px]" />
+                          <Lock size={14} className="mb-[1px]" />
                           Thanh toán ngay
                         </button>
                         <button 
@@ -424,55 +433,10 @@ export default function Header({
                             onCloseCartPopup();
                             if (onCartClick) onCartClick();
                           }}
-                          className="w-full bg-white border border-[#2071a7] text-[#2071a7] py-2.5 rounded shadow-sm font-bold text-[14px] hover:bg-slate-50 transition-colors tracking-wide"
+                          className="w-full bg-white border border-[#2071a7] text-[#2071a7] py-2 rounded shadow-sm font-bold text-[13px] hover:bg-slate-50 transition-colors tracking-wide"
                         >
                           Xem giỏ hàng
                         </button>
-                      </div>
-                    </div>
-
-                    <div className="overflow-y-auto flex-1 min-h-0 w-full pb-4 border-t border-slate-100">
-                      <div className="px-5 py-4 text-[16px] font-bold text-black bg-white sticky top-0 z-10 tracking-tight">
-                        Khám phá sản phẩm liên quan
-                      </div>
-                      <div className="px-5 flex flex-col gap-5">
-                        {PRODUCTS.filter(p => p.category === cartPopupItem.product.category && p.id !== cartPopupItem.product.id)
-                          .slice(0, 4)
-                          .map((relatedProd) => (
-                            <div key={relatedProd.id} className="flex gap-4 group/item pb-5 border-b border-slate-100 last:border-b-0 last:pb-0">
-                              <div className="w-[80px] h-[80px] bg-white rounded flex-shrink-0 flex items-center justify-center p-0 cursor-pointer pt-1">
-                                <img 
-                                  src={getRandomImage(relatedProd.name)} 
-                                  alt={relatedProd.name} 
-                                  className="max-w-full max-h-full object-contain mix-blend-multiply"
-                                />
-                              </div>
-                              <div className="flex-1 min-w-0 flex flex-col">
-                                <div className="text-[11px] text-slate-600 font-medium tracking-wide mb-1">
-                                  MECSU SELECT
-                                </div>
-                                <h5 className="text-[14px] text-[#2071a7] leading-snug mb-1 cursor-pointer">
-                                  {relatedProd.name}
-                                </h5>
-                                <div className="text-[12px] text-slate-500 mb-2 font-medium">
-                                  Mã SP: {relatedProd.id}<br/>
-                                  NSX: MS-{relatedProd.id.substring(0, 8)}
-                                </div>
-                                <div className="text-[16px] font-bold text-slate-900 mb-3">
-                                  {relatedProd.price.toLocaleString('vi-VN')} ₫
-                                </div>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onAddToCart(relatedProd, 1);
-                                  }}
-                                  className="w-[140px] bg-brand-primary border-brand-primary text-brand-secondary py-1.5 rounded hover:bg-brand-primary/90 transition-colors text-[14px] font-bold"
-                                >
-                                  Thêm giỏ hàng
-                                </button>
-                              </div>
-                            </div>
-                          ))}
                       </div>
                     </div>
                   </motion.div>

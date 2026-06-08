@@ -288,14 +288,14 @@ export default function SubcategoryPage({ onAddToCart }: SubcategoryPageProps) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setIsMobileFilterOpen(false)}
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999]"
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[400]"
               />
               <motion.div
                 initial={{ x: '-100%' }}
                 animate={{ x: 0 }}
                 exit={{ x: '-100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed top-0 left-0 bottom-0 w-[300px] bg-white z-[1000] p-6 shadow-2xl overflow-y-auto"
+                className="fixed top-0 left-0 bottom-0 w-[300px] bg-white z-[401] p-6 shadow-2xl overflow-y-auto"
               >
                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
                   <h3 className="font-black text-lg uppercase tracking-tight">Bộ lọc</h3>

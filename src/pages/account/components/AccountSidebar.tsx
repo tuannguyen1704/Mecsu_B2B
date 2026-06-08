@@ -8,7 +8,6 @@ import {
   Heart, 
   FileText, 
   RotateCcw,
-  Shield, 
   User,
   HeadphonesIcon,
   Mail,
@@ -56,7 +55,6 @@ const menuSections: MenuSection[] = [
       { id: 'addresses', label: 'Địa chỉ giao hàng', icon: MapPin, href: '/tai-khoan/dia-chi' },
       { id: 'payment', label: 'Phương thức thanh toán', icon: CreditCard, href: '/tai-khoan/thanh-toan' },
       { id: 'profile', label: 'Thông tin tài khoản', icon: User, href: '/tai-khoan/thong-tin-ca-nhan' },
-      { id: 'security', label: 'Đăng nhập & bảo mật', icon: Shield, href: '/tai-khoan/bao-mat' },
     ],
   },
   {
@@ -64,7 +62,7 @@ const menuSections: MenuSection[] = [
     label: 'Hỗ trợ',
     items: [
       { id: 'support', label: 'Hỗ trợ khách hàng', icon: HeadphonesIcon, href: '/tai-khoan/ho-tro' },
-      { id: 'marketing', label: 'Cài đặt email marketing', icon: Mail, href: '/tai-khoan/marketing-email' },
+      { id: 'marketing', label: 'Góp ý & Đánh giá', icon: Mail, href: '/tai-khoan/marketing-email' },
     ],
   },
 ];
@@ -88,7 +86,7 @@ const SidebarContent: React.FC<{ user: AccountUser; onClose?: () => void }> = ({
   return (
     <>
       {/* User Info */}
-      <div className="p-6 border-b border-[#E5EAF2] bg-gradient-to-br from-[#163F78] to-[#1a4a8a]">
+      <div className="p-6 border-b border-[#E5EAF2] bg-[#163F78]">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-white font-bold text-lg flex-shrink-0 border-2 border-white/30">
             {getInitials(user.name)}

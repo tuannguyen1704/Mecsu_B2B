@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { 
   MapPin, 
   Plus, 
@@ -17,6 +17,8 @@ import {
 import { AccountLayout } from './components/AccountLayout';
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';
+import { mockAddresses } from './data/accountData';
+import { Address as AddressType } from '../../types/auth';
 
 interface Address {
   id: string;
@@ -43,7 +45,6 @@ interface AddressFormData {
   isDefault: boolean;
 }
 
-// Vietnamese provinces for demo
 const PROVINCES = ["TP.HCM", "TP.Hà Nội", "TP.Đà Nẵng", "Bình Dương", "Đồng Nai"];
 const DISTRICTS: Record<string, string[]> = {
   "TP.HCM": ["Quận 1", "Quận 3", "Quận 7", "Quận 9", "Quận Bình Thạnh", "Thủ Đức"],
@@ -69,7 +70,7 @@ const initialFormData: AddressFormData = {
 const AddressesPage: React.FC = () => {
   const { user } = useAuth();
   const [addresses, setAddresses] = useState<Address[]>(() => {
-    // Initialize from user data
+    // Use user's saved addresses, or fallback to mock addresses for demo
     if (user?.addresses && user.addresses.length > 0) {
       return user.addresses.map(addr => ({
         id: addr.id,
@@ -84,7 +85,19 @@ const AddressesPage: React.FC = () => {
         isDefault: addr.isDefault,
       }));
     }
-    return [];
+    // Return mock addresses for demo
+    return mockAddresses.map(addr => ({
+      id: addr.id,
+      recipientName: addr.recipientName,
+      phone: addr.phone,
+      companyName: '',
+      addressLine: addr.streetAddress,
+      ward: addr.ward,
+      district: addr.district,
+      city: addr.province,
+      note: addr.deliveryNote,
+      isDefault: addr.isDefault,
+    }));
   });
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
@@ -93,6 +106,16 @@ const AddressesPage: React.FC = () => {
   const [errors, setErrors] = useState<Partial<Record<keyof AddressFormData, string>>>({});
 
   const hasAddresses = addresses.length > 0;
+
+  // Lock body scroll when modal is open
+  React.useEffect(() => {
+    if (isFormOpen || deleteConfirm) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isFormOpen, deleteConfirm]);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof AddressFormData, string>> = {};
@@ -202,7 +225,6 @@ const AddressesPage: React.FC = () => {
 
     let updatedAddresses = addresses.filter(addr => addr.id !== deleteConfirm.id);
     
-    // If deleted address was default and there are other addresses, set first as default
     if (deleteConfirm.isDefault && updatedAddresses.length > 0) {
       updatedAddresses = updatedAddresses.map((addr, index) => ({
         ...addr,
@@ -234,20 +256,7 @@ const AddressesPage: React.FC = () => {
 
   return (
     <AccountLayout>
-      <div className="space-y-6">
-        {/* Breadcrumb */}
-        <nav className="flex items-center text-sm">
-          <Link to="/" className="text-slate-500 hover:text-[#163F78] transition-colors flex items-center gap-1">
-            Trang chủ
-          </Link>
-          <span className="mx-2 text-slate-400">›</span>
-          <Link to="/tai-khoan" className="text-slate-500 hover:text-[#163F78] transition-colors">
-            Tài khoản
-          </Link>
-          <span className="mx-2 text-slate-400">›</span>
-          <span className="text-[#163F78] font-semibold">Địa chỉ giao hàng</span>
-        </nav>
-
+      <div className="space-y-4">
         {/* Page Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -273,7 +282,7 @@ const AddressesPage: React.FC = () => {
             {addresses.map((address) => (
               <div
                 key={address.id}
-                className="bg-white rounded-2xl border border-slate-200 p-5 hover:border-slate-300 transition-colors"
+                className="bg-white rounded-2xl border border-slate-200 p-4 hover:border-slate-300 transition-colors"
               >
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div className="flex-1 min-w-0">
@@ -359,22 +368,30 @@ const AddressesPage: React.FC = () => {
         )}
       </div>
 
-      {/* Address Form Modal */}
-      {isFormOpen && (
+      {/* Address Form Modal — rendered via portal above everything */}
+      {isFormOpen && createPortal(
         <>
+          {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-black/50 z-40"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[400]"
             onClick={handleCloseForm}
           />
-          <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-white shadow-xl z-50 flex flex-col">
+          {/* Panel */}
+          <div 
+            className="fixed inset-y-0 right-0 w-full max-w-lg bg-white shadow-[-8px_0_40px_rgba(0,0,0,0.15)] z-[401] flex flex-col"
+            role="dialog"
+            aria-modal="true"
+            aria-label={editingAddress ? 'Sửa địa chỉ' : 'Thêm địa chỉ mới'}
+          >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 shrink-0">
               <h2 className="text-xl font-bold text-slate-900">
                 {editingAddress ? 'Sửa địa chỉ' : 'Thêm địa chỉ mới'}
               </h2>
               <button
                 onClick={handleCloseForm}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                aria-label="Đóng"
               >
                 <X size={20} className="text-slate-500" />
               </button>
@@ -589,12 +606,21 @@ const AddressesPage: React.FC = () => {
               <label className="flex items-center gap-3 cursor-pointer">
                 <div 
                   className={cn(
-                    "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
+                    "w-5 h-5 rounded border-2 flex items-center justify-center transition-all cursor-pointer",
                     formData.isDefault 
                       ? "bg-[#163F78] border-[#163F78]" 
                       : "border-slate-300 hover:border-slate-400"
                   )}
                   onClick={() => setFormData(prev => ({ ...prev, isDefault: !prev.isDefault }))}
+                  role="checkbox"
+                  aria-checked={formData.isDefault}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === ' ' || e.key === 'Enter') {
+                      e.preventDefault();
+                      setFormData(prev => ({ ...prev, isDefault: !prev.isDefault }));
+                    }
+                  }}
                 >
                   {formData.isDefault && <CheckCircle2 size={14} className="text-white" />}
                 </div>
@@ -603,7 +629,7 @@ const AddressesPage: React.FC = () => {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center gap-3 p-6 border-t border-slate-200 bg-slate-50">
+            <div className="flex items-center gap-3 p-6 border-t border-slate-200 bg-slate-50 shrink-0">
               <button
                 onClick={handleCloseForm}
                 className="flex-1 px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-medium text-sm rounded-xl transition-colors"
@@ -618,18 +644,24 @@ const AddressesPage: React.FC = () => {
               </button>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
 
-      {/* Delete Confirm Modal */}
-      {deleteConfirm && (
+      {/* Delete Confirm Modal — also via portal */}
+      {deleteConfirm && createPortal(
         <>
           <div 
-            className="fixed inset-0 bg-black/50 z-40"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[400]"
             onClick={() => setDeleteConfirm(null)}
           />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
+          <div className="fixed inset-0 z-[401] flex items-center justify-center p-4">
+            <div 
+              className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Xác nhận xóa địa chỉ"
+            >
               <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Trash2 size={24} className="text-red-600" />
               </div>
@@ -655,7 +687,8 @@ const AddressesPage: React.FC = () => {
               </div>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </AccountLayout>
   );

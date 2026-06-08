@@ -1,22 +1,23 @@
 /**
  * ResetPasswordPage.tsx
- * 
- * Trang đặt lại mật khẩu mới
- * User sẽ đến trang này khi click link trong email
- * URL sẽ có dạng: /reset-password?token=xxx&email=xxx
+ *
+ * Trang đặt lại mật khẩu bằng OTP
+ * User nhập email -> OTP gửi qua console -> Nhập OTP + mật khẩu mới
+ * Trang này có thể truy cập trực tiếp hoặc từ LoginModal forgot flow
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { updatePassword } from '../services/authService';
+import { Lock, Eye, EyeOff, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
+import { sendResetPasswordEmail, resetPasswordWithOtp, getPendingOtpInfo } from '../services/authService';
 
 // ============================================
 // TYPES
 // ============================================
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
+type Step = 'email' | 'otp' | 'password' | 'success';
 
 // ============================================
 // COMPONENT
@@ -24,13 +25,11 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  
-  // Lấy token và email từ URL (Supabase truyền vào)
-  const token = searchParams.get('token');
-  const email = searchParams.get('email');
 
   // State
+  const [step, setStep] = useState<Step>('email');
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -40,37 +39,14 @@ export default function ResetPasswordPage() {
   const [countdown, setCountdown] = useState(5);
 
   // ============================================
-  // VALIDATION
+  // HANDLERS
   // ============================================
 
-  const validatePassword = useCallback((password: string): string | null => {
-    if (!password) {
-      return 'Vui lòng nhập mật khẩu mới';
-    }
-    if (password.length < 6) {
-      return 'Mật khẩu phải có ít nhất 6 ký tự';
-    }
-    return null;
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate
-    const passwordError = validatePassword(newPassword);
-    if (passwordError) {
-      setError(passwordError);
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setError('Mật khẩu không khớp');
-      return;
-    }
-
-    // Kiểm tra token
-    if (!token) {
-      setError('Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn');
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Vui lòng nhập email hợp lệ');
       return;
     }
 
@@ -78,12 +54,70 @@ export default function ResetPasswordPage() {
     setStatus('loading');
 
     try {
-      const result = await updatePassword(newPassword);
-
+      const result = await sendResetPasswordEmail(email.trim());
       if (result.success) {
+        setStep('otp');
+        setStatus('idle');
+      } else {
+        setStatus('error');
+        setError(result.error || 'Có lỗi xảy ra.');
+      }
+    } catch {
+      setStatus('error');
+      setError('Có lỗi xảy ra. Vui lòng thử lại.');
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!otp || otp.length !== 6) {
+      setError('Vui lòng nhập mã OTP 6 số');
+      return;
+    }
+
+    setError('');
+    setStatus('loading');
+
+    try {
+      const info = getPendingOtpInfo();
+      if (!info || info.otp !== otp || info.email !== email.trim().toLowerCase()) {
+        setStatus('error');
+        setError('Mã OTP không đúng hoặc đã hết hạn');
+        return;
+      }
+
+      // OTP verified - go to password step
+      setStep('password');
+      setStatus('idle');
+    } catch {
+      setStatus('error');
+      setError('Có lỗi xảy ra. Vui lòng thử lại.');
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!newPassword || newPassword.length < 6) {
+      setError('Mật khẩu mới phải có ít nhất 6 ký tự');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Mật khẩu xác nhận không khớp');
+      return;
+    }
+
+    setError('');
+    setStatus('loading');
+
+    try {
+      const result = await resetPasswordWithOtp(email.trim(), otp, newPassword);
+      if (result.success) {
+        setStep('success');
         setStatus('success');
-        
-        // Countdown để chuyển hướng
+
+        // Countdown to redirect
         const timer = setInterval(() => {
           setCountdown((prev) => {
             if (prev <= 1) {
@@ -94,16 +128,29 @@ export default function ResetPasswordPage() {
             return prev - 1;
           });
         }, 1000);
-
-        return () => clearInterval(timer);
       } else {
         setStatus('error');
-        setError(result.error || 'Có lỗi xảy ra. Vui lòng thử lại.');
+        setError(result.error || 'Mã OTP không hợp lệ hoặc đã hết hạn.');
       }
-    } catch (err) {
+    } catch {
       setStatus('error');
       setError('Có lỗi xảy ra. Vui lòng thử lại.');
     }
+  };
+
+  const handleGoBackToEmail = () => {
+    setStep('email');
+    setStatus('idle');
+    setError('');
+    setOtp('');
+  };
+
+  const handleGoBackToOtp = () => {
+    setStep('otp');
+    setStatus('idle');
+    setError('');
+    setNewPassword('');
+    setConfirmPassword('');
   };
 
   // ============================================
@@ -132,13 +179,16 @@ export default function ResetPasswordPage() {
 
             {/* Title */}
             <h1 className="text-2xl font-bold text-slate-800 mb-2">
-              {status === 'success' ? 'Đặt lại mật khẩu thành công' : 'Tạo mật khẩu mới'}
+              {step === 'success' ? 'Đặt lại mật khẩu thành công' : 'Khôi phục mật khẩu'}
             </h1>
             <p className="text-sm text-slate-500">
-              {status === 'success' 
+              {step === 'success'
                 ? 'Mật khẩu của bạn đã được thay đổi thành công.'
-                : 'Nhập mật khẩu mới cho tài khoản của bạn.'
-              }
+                : step === 'otp'
+                ? `Nhập mã OTP đã gửi đến ${email}`
+                : step === 'password'
+                ? 'Nhập mật khẩu mới'
+                : 'Nhập email đã đăng ký để nhận mã OTP'}
             </p>
           </div>
 
@@ -147,7 +197,7 @@ export default function ResetPasswordPage() {
             {/* ============================================ */}
             {/* SUCCESS STATE */}
             {/* ============================================ */}
-            {status === 'success' && (
+            {step === 'success' && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -178,25 +228,155 @@ export default function ResetPasswordPage() {
             )}
 
             {/* ============================================ */}
-            {/* FORM STATE */}
+            {/* STEP: ENTER EMAIL */}
             {/* ============================================ */}
-            {status !== 'success' && (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Token Warning */}
-                {!token && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-amber-800">Link không hợp lệ</p>
-                        <p className="text-xs text-amber-600 mt-1">
-                          Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. 
-                          Vui lòng yêu cầu gửi lại email đặt lại mật khẩu.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+            {step === 'email' && (
+              <form onSubmit={handleSendOtp} className="space-y-4">
+                <p className="text-xs text-slate-500 text-center mb-2">
+                  Mở DevTools Console (F12) để xem mã OTP
+                </p>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">
+                    Email đã đăng ký
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                    placeholder="nguyen@example.com"
+                    className="w-full px-4 py-3.5 border border-[#E2E8F0] rounded-xl text-sm
+                      bg-white hover:border-slate-300 focus:border-[#003B73] focus:ring-2 focus:ring-[#003B73]/10
+                      transition-all outline-none"
+                    autoFocus
+                  />
+                </div>
+
+                {/* Error */}
+                {error && (
+                  <p className="text-sm text-red-500 bg-red-50 px-4 py-2 rounded-lg">{error}</p>
                 )}
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={status === 'loading'}
+                  className="w-full py-3.5 bg-[#003B73] text-white font-bold text-sm uppercase tracking-wider
+                    rounded-xl hover:bg-[#002d5a] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {status === 'loading' ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Đang gửi...
+                    </>
+                  ) : (
+                    'Gửi mã OTP'
+                  )}
+                </button>
+
+                {/* Back to Login */}
+                <button
+                  type="button"
+                  onClick={() => navigate('/')}
+                  className="w-full py-3 text-slate-500 font-medium text-sm hover:text-slate-700 transition-colors"
+                >
+                  Quay về trang chủ
+                </button>
+              </form>
+            )}
+
+            {/* ============================================ */}
+            {/* STEP: ENTER OTP */}
+            {/* ============================================ */}
+            {step === 'otp' && (
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                {/* Back Button */}
+                <button
+                  type="button"
+                  onClick={handleGoBackToEmail}
+                  className="flex items-center gap-1 text-sm text-slate-500 hover:text-[#003B73] transition-colors mb-2"
+                >
+                  <ArrowLeft size={14} />
+                  Nhập lại email
+                </button>
+
+                {/* OTP Info */}
+                <div className="bg-[#003B73]/5 rounded-xl p-3 text-center">
+                  <p className="text-xs text-slate-500">
+                    Mở DevTools Console (F12) để xem mã OTP
+                  </p>
+                </div>
+
+                {/* OTP */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">
+                    Mã OTP (6 số)
+                  </label>
+                  <input
+                    type="text"
+                    value={otp}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setOtp(value);
+                      setError('');
+                    }}
+                    placeholder="000000"
+                    maxLength={6}
+                    className="w-full px-4 py-4 text-center text-2xl tracking-[0.5em] border border-[#E2E8F0] rounded-xl
+                      bg-white hover:border-slate-300 focus:border-[#003B73] focus:ring-2 focus:ring-[#003B73]/10
+                      transition-all outline-none font-mono"
+                    autoFocus
+                  />
+                </div>
+
+                {/* Error */}
+                {error && (
+                  <p className="text-sm text-red-500 bg-red-50 px-4 py-2 rounded-lg">{error}</p>
+                )}
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={status === 'loading'}
+                  className="w-full py-3.5 bg-[#003B73] text-white font-bold text-sm uppercase tracking-wider
+                    rounded-xl hover:bg-[#002d5a] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {status === 'loading' ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Đang xác minh...
+                    </>
+                  ) : (
+                    'Xác minh OTP'
+                  )}
+                </button>
+
+                {/* Back to Home */}
+                <button
+                  type="button"
+                  onClick={() => navigate('/')}
+                  className="w-full py-3 text-slate-500 font-medium text-sm hover:text-slate-700 transition-colors"
+                >
+                  Quay về trang chủ
+                </button>
+              </form>
+            )}
+
+            {/* ============================================ */}
+            {/* STEP: ENTER NEW PASSWORD */}
+            {/* ============================================ */}
+            {step === 'password' && (
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                {/* Back Button */}
+                <button
+                  type="button"
+                  onClick={handleGoBackToOtp}
+                  className="flex items-center gap-1 text-sm text-slate-500 hover:text-[#003B73] transition-colors mb-2"
+                >
+                  <ArrowLeft size={14} />
+                  Nhập lại OTP
+                </button>
 
                 {/* New Password */}
                 <div>
@@ -208,15 +388,11 @@ export default function ResetPasswordPage() {
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={newPassword}
-                      onChange={(e) => {
-                        setNewPassword(e.target.value);
-                        setError('');
-                      }}
+                      onChange={(e) => { setNewPassword(e.target.value); setError(''); }}
                       placeholder="Ít nhất 6 ký tự"
                       className="w-full pl-11 pr-12 py-3.5 border border-[#E2E8F0] rounded-xl text-sm
                         bg-white hover:border-slate-300 focus:border-[#003B73] focus:ring-2 focus:ring-[#003B73]/10
                         transition-all outline-none"
-                      autoFocus
                     />
                     <button
                       type="button"
@@ -238,10 +414,7 @@ export default function ResetPasswordPage() {
                     <input
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={confirmPassword}
-                      onChange={(e) => {
-                        setConfirmPassword(e.target.value);
-                        setError('');
-                      }}
+                      onChange={(e) => { setConfirmPassword(e.target.value); setError(''); }}
                       placeholder="Nhập lại mật khẩu mới"
                       className="w-full pl-11 pr-12 py-3.5 border border-[#E2E8F0] rounded-xl text-sm
                         bg-white hover:border-slate-300 focus:border-[#003B73] focus:ring-2 focus:ring-[#003B73]/10
@@ -257,27 +430,17 @@ export default function ResetPasswordPage() {
                   </div>
                 </div>
 
-                {/* Error Message */}
+                {/* Error */}
                 {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-red-50 border border-red-200 rounded-xl p-4"
-                  >
-                    <div className="flex items-start gap-3">
-                      <AlertCircle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-red-600">{error}</p>
-                    </div>
-                  </motion.div>
+                  <p className="text-sm text-red-500 bg-red-50 px-4 py-2 rounded-lg">{error}</p>
                 )}
 
-                {/* Submit Button */}
+                {/* Submit */}
                 <button
                   type="submit"
-                  disabled={status === 'loading' || !token}
+                  disabled={status === 'loading'}
                   className="w-full py-3.5 bg-[#FFC72C] text-[#111827] font-bold text-sm uppercase tracking-wider
-                    rounded-xl hover:bg-[#E8B931] transition-colors disabled:opacity-60 disabled:cursor-not-allowed
-                    flex items-center justify-center gap-2"
+                    rounded-xl hover:bg-[#E8B931] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   {status === 'loading' ? (
                     <>
@@ -287,15 +450,6 @@ export default function ResetPasswordPage() {
                   ) : (
                     'Đặt lại mật khẩu'
                   )}
-                </button>
-
-                {/* Back to Login */}
-                <button
-                  type="button"
-                  onClick={() => navigate('/')}
-                  className="w-full py-3 text-slate-500 font-medium text-sm hover:text-slate-700 transition-colors"
-                >
-                  Quay về trang chủ
                 </button>
               </form>
             )}

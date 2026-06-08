@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, ChevronRight, Bell, Package, CheckCircle2, Truck, User, LogIn, LogOut, Settings, FileText, LayoutDashboard } from 'lucide-react';
+import { X, ChevronRight, Bell, Package, CheckCircle2, Truck, User, LogIn, ArrowRight, FileText } from 'lucide-react';
 
 interface Notification {
   id: string;
-  type: 'order' | 'system' | 'shipping';
+  type: 'order' | 'system' | 'shipping' | 'quotation';
   message: string;
   time: string;
   read: boolean;
@@ -23,13 +23,22 @@ interface ProfilePopupProps {
   userName?: string;
 }
 
+type TabType = 'all' | 'order' | 'quotation';
+
 export default function ProfilePopup({ isOpen, onClose, notifications, onMarkAllRead, onLoginClick, onLogout, userName }: ProfilePopupProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'all' | 'order'>('all');
+  const [activeTab, setActiveTab] = useState<TabType>('all');
 
-  const filteredNotifications = activeTab === 'all' 
-    ? notifications 
-    : notifications.filter(n => n.type === 'order');
+  const filteredNotifications = (() => {
+    switch (activeTab) {
+      case 'order':
+        return notifications.filter(n => n.type === 'order' || n.type === 'shipping');
+      case 'quotation':
+        return notifications.filter(n => n.type === 'quotation' || n.type === 'system');
+      default:
+        return notifications;
+    }
+  })();
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -37,180 +46,191 @@ export default function ProfilePopup({ isOpen, onClose, notifications, onMarkAll
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop for mobile or just to close on click outside */}
-          <div 
-            className="fixed inset-0 z-[290] bg-black/5" 
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-[290]"
             onClick={onClose}
           />
-          
+
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            initial={{ opacity: 0, y: -8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute right-0 top-[calc(100%+10px)] w-[380px] bg-white rounded-[24px] shadow-2xl z-[300] border border-slate-100 overflow-hidden"
+            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed right-6 top-[72px] z-[300] bg-white rounded-[20px] border border-[#E5E7EB] shadow-[0_20px_60px_rgba(15,23,42,0.18)] overflow-hidden w-[380px] max-w-[calc(100vw-24px)] max-h-[min(620px,calc(100vh-32px))] flex flex-col"
           >
-            {/* User Info Header (shown when logged in) */}
-            {userName && (
-              <div className="px-6 py-5 bg-gradient-to-b from-slate-50 to-white border-b border-slate-100">
-                {/* Profile Area - Clickable */}
-                <div 
-                  className="flex items-center gap-4 cursor-pointer hover:bg-slate-100/50 -mx-2 px-2 py-2 rounded-xl transition-colors"
-                  onClick={() => {
-                    navigate('/tai-khoan');
-                    onClose();
-                  }}
-                >
-                  <div className="w-12 h-12 rounded-full bg-[#003B73] text-white flex items-center justify-center font-bold text-lg">
-                    {userName.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-bold text-slate-800">{userName}</p>
-                    <p className="text-xs text-slate-400">Khách hàng Mecsu</p>
-                  </div>
+            {/* Account Card */}
+            {userName ? (
+              <div
+                className="flex items-center gap-3 px-4 py-3 bg-[#F8FAFC] border border-[#DCE7F5] rounded-[14px] mx-4 mt-4 cursor-pointer hover:bg-[#EFF6FF] hover:border-[#BFD4F2] transition-all group"
+                style={{ minHeight: 56 }}
+                onClick={() => {
+                  navigate('/tai-khoan');
+                  onClose();
+                }}
+              >
+                <div className="w-9 h-9 rounded-full bg-[#173E75] text-white flex items-center justify-center font-bold text-[15px] shrink-0">
+                  {userName.charAt(0).toUpperCase()}
                 </div>
-                <div className="flex gap-2 mt-4">
-                  <button 
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#003B73] text-white text-xs font-bold rounded-xl hover:bg-[#002d5a] transition-colors"
-                    onClick={() => {
-                      navigate('/tai-khoan/don-hang');
-                      onClose();
-                    }}
-                  >
-                    <Package size={14} />
-                    Đơn hàng
-                  </button>
-                  <button 
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-50 transition-colors"
-                    onClick={() => {
-                      navigate('/tai-khoan');
-                      onClose();
-                    }}
-                  >
-                    <LayoutDashboard size={14} />
-                    Tổng quan
-                  </button>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-bold text-[#173E75] leading-tight truncate">{userName}</p>
+                  <p className="text-[12px] text-[#6B7280] font-medium leading-tight">Truy cập tài khoản MECSU</p>
                 </div>
+                <ChevronRight size={16} className="text-[#173E75] shrink-0 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            ) : (
+              <div
+                className="flex items-center gap-3 px-4 py-3 bg-[#F8FAFC] border border-[#DCE7F5] rounded-[14px] mx-4 mt-4 cursor-pointer hover:bg-[#EFF6FF] hover:border-[#BFD4F2] transition-all group"
+                style={{ minHeight: 56 }}
+                onClick={() => {
+                  onLoginClick?.();
+                }}
+              >
+                <div className="w-9 h-9 rounded-full bg-[#E5E7EB] text-[#6B7280] flex items-center justify-center shrink-0">
+                  <User size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-bold text-[#173E75] leading-tight">Đăng nhập MECSU</p>
+                  <p className="text-[12px] text-[#6B7280] font-medium leading-tight">Đăng nhập để xem đơn hàng</p>
+                </div>
+                <ChevronRight size={16} className="text-[#173E75] shrink-0 group-hover:translate-x-0.5 transition-transform" />
               </div>
             )}
 
-            {/* Login prompt (shown when not logged in) */}
-            {!userName && (
-              <div className="px-6 py-5 bg-gradient-to-b from-slate-50 to-white border-b border-slate-100">
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
-                    <User size={32} className="text-slate-400" />
-                  </div>
-                  <p className="text-sm text-slate-500 mb-4">Đăng nhập để xem đơn hàng và ưu đãi</p>
-                  <button 
-                    onClick={() => onLoginClick?.()}
-                    className="w-full py-3 bg-[#003B73] text-white font-bold text-sm rounded-xl hover:bg-[#002d5a] transition-colors"
-                  >
-                    Đăng nhập / Đăng ký
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Notifications Content */}
-            <div className="px-6 py-4 flex items-center justify-between border-b border-slate-50">
-              <h3 className="text-base font-bold text-slate-900">Thông báo</h3>
+            {/* Title Row */}
+            <div className="flex items-center justify-between px-5 pt-4 pb-3">
+              <h3 className="text-[18px] font-bold text-[#111827]" style={{ lineHeight: 1.2 }}>Thông báo</h3>
               {unreadCount > 0 && (
-                <button 
+                <button
                   onClick={onMarkAllRead}
-                  className="text-xs font-bold text-[#003B73] hover:underline"
+                  className="text-[13px] font-medium text-[#2563EB] hover:text-[#1D4ED8] transition-colors"
                 >
-                  Đánh dấu đã đọc tất cả ({unreadCount})
+                  Đánh dấu đã đọc tất cả
                 </button>
               )}
             </div>
 
             {/* Tabs */}
-            <div className="px-6 py-3 flex gap-2">
-              <button 
-                onClick={() => setActiveTab('all')}
-                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${activeTab === 'all' ? 'bg-[#003B73] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-              >
-                Tất cả
-              </button>
-              <button 
-                onClick={() => setActiveTab('order')}
-                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${activeTab === 'order' ? 'bg-[#003B73] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-              >
-                Đơn hàng
-              </button>
+            <div className="flex gap-2 px-5 pb-3">
+              {(['all', 'order', 'quotation'] as TabType[]).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition-all ${
+                    activeTab === tab
+                      ? 'bg-[#173E75] text-white border border-[#173E75]'
+                      : 'bg-white text-[#475569] border border-[#CBD5E1] hover:border-[#94A3B8]'
+                  }`}
+                >
+                  {tab === 'all' ? 'Tất cả' : tab === 'order' ? 'Đơn hàng' : 'Báo giá'}
+                </button>
+              ))}
             </div>
 
             {/* Notification List */}
-            <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+            <div className="flex-1 overflow-y-auto min-h-0" style={{
+              maxHeight: 360,
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#CBD5E1 transparent',
+            }}>
+              <style>{`
+                .notif-scroll::-webkit-scrollbar { width: 4px; }
+                .notif-scroll::-webkit-scrollbar-track { background: transparent; }
+                .notif-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
+                .notif-scroll::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+              `}</style>
               {filteredNotifications.length > 0 ? (
-                filteredNotifications.map((n) => (
-                  <div 
-                    key={n.id}
-                    className={`px-6 py-5 border-b border-slate-50 flex gap-4 transition-colors hover:bg-slate-50 ${!n.read ? 'bg-blue-50/30' : ''}`}
-                  >
-                    <div className="shrink-0 relative">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${n.type === 'order' ? 'bg-orange-100 text-orange-600' : n.icon === 'success' ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-500'}`}>
-                        {n.type === 'order' ? <Package size={22} /> : n.icon === 'success' ? <Truck size={22} /> : <Bell size={22} />}
+                filteredNotifications.map((n) => {
+                  const iconBg = n.type === 'shipping' || n.icon === 'success'
+                    ? 'bg-[#ECFDF3]'
+                    : n.type === 'quotation'
+                    ? 'bg-[#F0F9FF]'
+                    : 'bg-[#EFF6FF]';
+                  const iconColor = n.type === 'shipping' || n.icon === 'success'
+                    ? '#16A34A'
+                    : n.type === 'quotation'
+                    ? '#0369A1'
+                    : '#173E75';
+                  const Icon = n.type === 'shipping' || n.icon === 'success'
+                    ? CheckCircle2
+                    : n.type === 'quotation'
+                    ? FileText
+                    : n.type === 'order'
+                    ? Package
+                    : Bell;
+
+                  return (
+                    <div
+                      key={n.id}
+                      className={`px-5 py-4 border-b border-[#F1F5F9] flex gap-3 cursor-pointer transition-colors hover:bg-[#F8FAFC] ${!n.read ? 'bg-[#F8FBFF]' : ''}`}
+                      onClick={() => {
+                        if (n.orderId) {
+                          navigate(`/tai-khoan/don-hang/${n.orderId}`);
+                          onClose();
+                        }
+                      }}
+                    >
+                      {/* Icon */}
+                      <div className={`w-[38px] h-[38px] rounded-lg flex items-center justify-center shrink-0 ${iconBg}`}>
+                        <Icon size={18} color={iconColor} />
                       </div>
-                      {!n.read && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />}
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-[13px] font-medium text-slate-800 leading-snug">
-                        {n.message.split(n.orderId || '').map((part, i, arr) => (
-                          <React.Fragment key={i}>
-                            {part}
-                            {i < arr.length - 1 && <span className="font-black text-slate-900">{n.orderId}</span>}
-                          </React.Fragment>
-                        ))}
-                      </p>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-[11px] text-slate-400 font-bold">{n.time}</span>
-                        <button 
-                          onClick={() => {
-                            const code = n.orderCode || n.orderId;
-                            if (code) {
-                              navigate(`/tai-khoan/don-hang/${code}`);
-                              onClose();
-                            }
-                          }}
-                          className="text-[11px] font-black text-blue-600 hover:underline uppercase tracking-widest"
-                        >
-                          Xem chi tiết
-                        </button>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        {/* Unread dot */}
+                        {!n.read && (
+                          <span className="inline-block w-2 h-2 rounded-full bg-[#173E75] mb-0.5" />
+                        )}
+
+                        <p className="text-[13px] text-[#374151] leading-[18px]">
+                          {n.message.split(n.orderId || '').map((part, i, arr) => (
+                            <React.Fragment key={i}>
+                              {part}
+                              {i < arr.length - 1 && n.orderId && (
+                                <span className="font-bold text-[#1F2937]">{n.orderId}</span>
+                              )}
+                            </React.Fragment>
+                          ))}
+                        </p>
+
+                        {/* Time + Action Row */}
+                        <div className="flex items-center justify-between mt-1.5">
+                          <span className="text-[12px] text-[#94A3B8]">{n.time}</span>
+                          {n.orderId && (
+                            <span className="text-[12px] font-semibold text-[#2563EB]">Xem chi tiết</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
-                <div className="py-20 text-center px-8">
-                  <Bell size={40} className="mx-auto text-slate-200 mb-4" />
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Không có thông báo nào</p>
+                <div className="py-16 text-center px-8">
+                  <Bell size={36} className="mx-auto text-[#E5E7EB] mb-3" />
+                  <p className="text-[13px] font-medium text-[#94A3B8]">Không có thông báo nào</p>
                 </div>
               )}
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-slate-100">
+            <div className="shrink-0 border-t border-[#E5E7EB]">
               {userName ? (
-                <button 
+                <button
                   onClick={() => onLogout?.()}
-                  className="w-full flex items-center justify-center gap-2 py-3 text-sm font-bold text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                  className="w-full flex items-center justify-center gap-2 h-14 text-[15px] font-bold text-[#DC2626] hover:bg-[#F8FAFC] transition-colors"
                 >
-                  <LogOut size={16} />
+                  <LogIn size={16} className="rotate-180" />
                   Đăng xuất
                 </button>
               ) : (
-                <button 
+                <button
                   onClick={onClose}
-                  className="w-full py-3 text-sm font-black text-slate-500 uppercase tracking-widest hover:bg-slate-50 rounded-xl transition-all"
+                  className="w-full h-14 text-[15px] font-bold text-[#173E75] hover:bg-[#F8FAFC] transition-colors"
                 >
                   Đóng
                 </button>
               )}
             </div>
-
-            {/* Arrow Pointer */}
-            <div className="absolute -top-2 right-10 w-4 h-4 bg-white rotate-45 border-l border-t border-slate-100" />
           </motion.div>
         </>
       )}

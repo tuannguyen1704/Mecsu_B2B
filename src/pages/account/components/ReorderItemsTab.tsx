@@ -49,9 +49,9 @@ export const ReorderItemsTab: React.FC<ReorderItemsTabProps> = ({
   const selectedCount = selectedItems.size;
 
   return (
-    <div className="w-full max-w-full space-y-5">
+    <div className="w-full max-w-full space-y-3">
       {/* Header Actions */}
-      <div className="bg-white rounded-2xl border border-[#E5EAF2] p-4 lg:p-6">
+      <div className="bg-white rounded-2xl border border-[#E5EAF2] p-3 lg:p-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* Selection Controls */}
           <div className="flex items-center gap-4">

@@ -27,7 +27,7 @@ const tabs: Tab[] = [
 
 export const OrderTabs: React.FC<OrderTabsProps> = ({ activeTab, onTabChange, counts }) => {
   return (
-    <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl w-fit">
+    <div className="hidden">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         const count = counts?.[tab.id === 'orders' ? 'orders' : tab.id === 'reorder' ? 'reorder' : 'returns'];
@@ -39,8 +39,8 @@ export const OrderTabs: React.FC<OrderTabsProps> = ({ activeTab, onTabChange, co
             className={cn(
               "px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ease-out",
               isActive
-                ? "bg-[#163F78] text-white shadow-md"
-                : "bg-transparent text-slate-600 hover:bg-white hover:text-slate-900"
+                ? "bg-[#163F78] text-white shadow-md border border-[#D9E5F6]"
+                : "bg-transparent text-slate-600 hover:bg-white hover:text-slate-900 border border-[#D9E5F6]"
             )}
           >
             <span className="flex items-center gap-2">

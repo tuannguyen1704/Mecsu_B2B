@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion } from 'motion/react';
-import { Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { OptimizedImage } from './ui/OptimizedImage';
 import { Product } from '../types';
 import { useSupabaseImages } from '../hooks/useSupabaseImages';
 import { generateProductUrl, toSlug } from '../lib/utils';
+import { NotifyWhenAvailableModal } from './ui/NotifyWhenAvailableModal';
+import { Toast } from './ui/Toast';
 
 interface ProductCardProps {
   key?: string | number;
@@ -13,32 +14,52 @@ interface ProductCardProps {
   onAddToCart?: (qty: number) => void;
   onQuickView?: () => void;
   onViewDetails?: () => void;
+  forceOutOfStock?: boolean;
 }
 
-const ProductCard = React.memo(({ product, onAddToCart, onQuickView, onViewDetails }: ProductCardProps) => {
-  const [qty, setQty] = useState(1);
+interface ToastState {
+  message: string;
+  type: 'success' | 'error';
+}
+
+const ProductCard = React.memo(({ product, onAddToCart, onQuickView, onViewDetails, forceOutOfStock = false }: ProductCardProps) => {
+  const [qty] = useState(1);
   const { getRandomImage } = useSupabaseImages();
   const navigate = useNavigate();
   const imageUrl = getRandomImage(product.name || product.id);
+  
+  // Notify modal state
+  const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false);
+  const [toast, setToast] = useState<ToastState | null>(null);
+  
+  // Check if product is out of stock (either real or forced)
+  const isOutOfStock = product.stock <= 0 || forceOutOfStock;
 
   // Generate slug for link - use existing slug or create from product name
   const productSlug = product.slug || toSlug(product.name || product.id);
 
-  const handleAdd = (e: React.MouseEvent) => {
+  const handleAdd = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // If out of stock, open notify modal instead
+    if (isOutOfStock) {
+      setIsNotifyModalOpen(true);
+      return;
+    }
+    
     if (onAddToCart) {
       onAddToCart(qty);
     }
-  };
+  }, [isOutOfStock, onAddToCart, qty]);
 
-  const handleQuickView = (e: React.MouseEvent) => {
+  const handleQuickView = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (onQuickView) onQuickView();
-  };
+  }, [onQuickView]);
 
-  const handleCardClick = (e: React.MouseEvent) => {
+  const handleCardClick = useCallback((e: React.MouseEvent) => {
     // Only navigate if clicking directly on card (not on buttons)
     const target = e.target as HTMLElement;
     if (target.closest('button') || target.closest('a')) {
@@ -54,7 +75,7 @@ const ProductCard = React.memo(({ product, onAddToCart, onQuickView, onViewDetai
       navigate(url);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  };
+  }, [product, onViewDetails, navigate]);
 
   return (
     <motion.div
@@ -77,8 +98,12 @@ const ProductCard = React.memo(({ product, onAddToCart, onQuickView, onViewDetai
           
           {/* Availability Badge */}
           <div className="absolute top-4 left-4 flex gap-2">
-             <span className="bg-emerald-50 text-emerald-700 text-[9px] font-bold capitalize tracking-widest px-2 py-1 border border-emerald-100 rounded-sm">
-               Sẵn kho
+             <span className={`text-[9px] font-bold capitalize tracking-widest px-2 py-1 border rounded-sm ${
+               isOutOfStock 
+                 ? 'bg-red-50 text-red-700 border-red-100' 
+                 : 'bg-emerald-50 text-emerald-700 border-emerald-100'
+             }`}>
+               {isOutOfStock ? 'Hết hàng' : 'Sẵn kho'}
              </span>
           </div>
 
@@ -118,8 +143,8 @@ const ProductCard = React.memo(({ product, onAddToCart, onQuickView, onViewDetai
                     {product.price.toLocaleString()} đ / cái
                   </span>
                 </div>
-                <div className={`text-[12px] font-bold ${product.stock > 0 ? 'text-green-700' : 'text-slate-900'}`}>
-                  {product.stock > 0 ? 'Sẵn hàng' : 'Hết hàng'}
+                <div className={`text-[12px] font-bold ${isOutOfStock ? 'text-red-600' : 'text-green-700'}`}>
+                  {isOutOfStock ? 'Hết hàng' : 'Sẵn hàng'}
                 </div>
               </div>
             </div>
@@ -132,15 +157,37 @@ const ProductCard = React.memo(({ product, onAddToCart, onQuickView, onViewDetai
         <button
           onClick={handleAdd}
           className={`w-full h-10 px-4 flex items-center justify-center transition-all duration-300 border font-bold uppercase text-[12px] tracking-tight ${
-            product.stock > 0 
-             ? 'bg-brand-primary border-brand-primary text-brand-secondary hover:bg-brand-primary/90' 
-             : 'border-slate-800 bg-white text-slate-800 hover:bg-slate-800 hover:text-white'
+            isOutOfStock 
+             ? 'border-slate-800 bg-white text-slate-800 hover:bg-slate-800 hover:text-white' 
+             : 'bg-brand-primary border-brand-primary text-brand-secondary hover:bg-brand-primary/90'
           }`}
         >
-          {product.stock > 0 ? 'Thêm giỏ hàng' : 'Nhắc tôi sau'}
+          {isOutOfStock ? 'Nhắc tôi sau' : 'Thêm giỏ hàng'}
         </button>
       </div>
     </motion.div>
+
+    {/* Notify When Available Modal */}
+    <NotifyWhenAvailableModal
+      isOpen={isNotifyModalOpen}
+      onClose={() => setIsNotifyModalOpen(false)}
+      product={product}
+      onSuccess={() => {
+        setToast({
+          message: 'Đã đăng ký nhắc hàng. Chúng tôi sẽ gửi email khi sản phẩm có hàng trở lại.',
+          type: 'success',
+        });
+      }}
+    />
+
+    {/* Toast Notification */}
+    {toast && (
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast(null)}
+      />
+    )}
   );
 });
 

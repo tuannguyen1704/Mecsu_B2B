@@ -2,12 +2,11 @@
  * useAuth.tsx
  * 
  * Auth Context và Hook cho React
- * Dùng Supabase Auth để quản lý authentication
+ * Dùng localStorage để quản lý authentication
  */
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
-import { User, Address, AuthState } from '../types/auth';
+import { User, Address, AuthState, MarketingPreferences } from '../types/auth';
 import { STORAGE_KEYS } from '../types/auth';
 import {
   signInWithPassword,
@@ -15,7 +14,6 @@ import {
   signOut as authSignOut,
   getCurrentUser,
   onAuthStateChange,
-  getUserMetadata,
 } from '../services/authService';
 
 // ============================================
@@ -34,6 +32,9 @@ interface AuthContextType extends AuthState {
   deleteAddress: (id: string) => void;
   setDefaultAddress: (id: string) => void;
   getDefaultAddress: () => Address | undefined;
+
+  // Profile management
+  updateProfile: (userData: Partial<User>) => void;
   
   // Loading states
   isLoading: boolean;
@@ -57,16 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ============================================
 
   useEffect(() => {
-    // Lấy user hiện tại khi app mount
     const initAuth = async () => {
       try {
-        const supabaseUser = await getCurrentUser();
+        const currentUser = await getCurrentUser();
         
-        if (supabaseUser) {
-          // Chuyển đổi Supabase user sang app User
-          const appUser = convertSupabaseUser(supabaseUser);
-          // Load thêm addresses từ localStorage
-          const fullUser = loadUserWithAddresses(appUser);
+        if (currentUser) {
+          const fullUser = loadUserWithAddresses(currentUser);
           setUser(fullUser);
           setIsLoggedIn(true);
         }
@@ -80,11 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initAuth();
 
-    // Lắng nghe thay đổi auth state (khi user đăng nhập/đăng xuất từ tab khác)
-    const unsubscribe = onAuthStateChange((supabaseUser) => {
-      if (supabaseUser) {
-        const appUser = convertSupabaseUser(supabaseUser);
-        const fullUser = loadUserWithAddresses(appUser);
+    const unsubscribe = onAuthStateChange((user) => {
+      if (user) {
+        const fullUser = loadUserWithAddresses(user);
         setUser(fullUser);
         setIsLoggedIn(true);
       } else {
@@ -93,45 +88,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    const handleMockAuthChange = (e: CustomEvent<User | null>) => {
+      const user = e.detail;
+      if (user) {
+        const fullUser = loadUserWithAddresses(user);
+        setUser(fullUser);
+        setIsLoggedIn(true);
+      } else {
+        setUser(null);
+        setIsLoggedIn(false);
+      }
+    };
+
+    window.addEventListener('mockAuthChange', handleMockAuthChange as EventListener);
+
     return () => {
       unsubscribe();
+      window.removeEventListener('mockAuthChange', handleMockAuthChange as EventListener);
     };
   }, []);
 
   // ============================================
-  // CHUYỂN ĐỔI USER TỪ SUPABASE
+  // CHUYỂN ĐỔI USER
   // ============================================
 
-  function convertSupabaseUser(supabaseUser: SupabaseUser): User {
-    return {
-      id: supabaseUser.id,
-      email: supabaseUser.email || '',
-      fullName: getUserMetadata(supabaseUser, 'full_name') || '',
-      phone: getUserMetadata(supabaseUser, 'phone') || '',
-      addresses: [],
-      createdAt: supabaseUser.created_at,
-      lastSignInAt: supabaseUser.last_sign_in_at,
-      emailConfirmed: !!supabaseUser.email_confirmed_at,
-    };
-  }
-
-  function loadUserWithAddresses(baseUser: User): User {
+  function loadUserWithAddresses(user: User): User {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
       if (stored) {
         const storedUser = JSON.parse(stored) as User;
-        // Merge addresses từ localStorage
         return {
-          ...baseUser,
-          fullName: storedUser.fullName || baseUser.fullName,
-          phone: storedUser.phone || baseUser.phone,
+          ...user,
+          fullName: storedUser.fullName || user.fullName,
+          phone: storedUser.phone || user.phone,
           addresses: storedUser.addresses || [],
+          gender: storedUser.gender || user.gender || '',
+          birthDate: storedUser.birthDate || user.birthDate || '',
+          company: storedUser.company || user.company || '',
+          taxCode: storedUser.taxCode || user.taxCode || '',
+          companyAddress: storedUser.companyAddress || user.companyAddress || '',
+          companyRepresentative: storedUser.companyRepresentative || user.companyRepresentative || '',
+          customerGroup: storedUser.customerGroup || user.customerGroup || 'Khách hàng MECsu',
+          currentDiscount: storedUser.currentDiscount || user.currentDiscount || 'Chưa cập nhật',
+          marketingPreferences: storedUser.marketingPreferences || user.marketingPreferences,
         };
       }
     } catch {
       // Ignore parse errors
     }
-    return baseUser;
+    return user;
   }
 
   // ============================================
@@ -153,15 +158,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await signInWithPassword(email, password);
     
     if (result.success && result.data) {
-      // Chuyển đổi Supabase user sang app User
-      const supabaseUser = result.data.user;
-      if (supabaseUser) {
-        const appUser = convertSupabaseUser(supabaseUser);
-        const fullUser = loadUserWithAddresses(appUser);
-        setUser(fullUser);
-        setIsLoggedIn(true);
-        saveUserToStorage(fullUser);
-      }
+      const appUser = result.data.user;
+      const fullUser = loadUserWithAddresses(appUser);
+      setUser(fullUser);
+      setIsLoggedIn(true);
+      saveUserToStorage(fullUser);
     }
     
     return {
@@ -180,16 +181,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ): Promise<{ success: boolean; error?: string }> => {
     const result = await signUpWithPassword(email, password, fullName);
     
-    // signUp trả về success nhưng cần xác minh email
-    if (result.success) {
-      // Nếu có user và session, đăng nhập luôn
-      if (result.data && 'session' in result.data) {
-        const appUser = convertSupabaseUser((result.data as any).user);
-        const fullUser = loadUserWithAddresses(appUser);
-        setUser(fullUser);
-        setIsLoggedIn(true);
-        saveUserToStorage(fullUser);
-      }
+    if (result.success && result.data) {
+      const appUser = result.data.user;
+      const fullUser = loadUserWithAddresses(appUser);
+      setUser(fullUser);
+      setIsLoggedIn(true);
+      saveUserToStorage(fullUser);
     }
     
     return {
@@ -242,13 +239,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveUserToStorage(updatedUser);
   }, [user, saveUserToStorage]);
 
+  const updateProfile = useCallback((userData: Partial<User>) => {
+    if (!user) return;
+
+    const updatedUser = {
+      ...user,
+      ...userData,
+    };
+
+    setUser(updatedUser);
+    saveUserToStorage(updatedUser);
+  }, [user, saveUserToStorage]);
+
   const deleteAddress = useCallback((id: string) => {
     if (!user) return;
 
-    const filteredAddresses = user.addresses.filter(a => a.id !== id);
-    
-    // Nếu xóa address mặc định, set cái đầu tiên làm mặc định
-    const needsNewDefault = user.addresses.find(a => a.id === id)?.isDefault;
+    const filteredAddresses = user.addresses.filter((a) => a.id !== id);
+    const needsNewDefault = user.addresses.find((a) => a.id === id)?.isDefault;
     if (needsNewDefault && filteredAddresses.length > 0) {
       filteredAddresses[0].isDefault = true;
     }
@@ -261,11 +268,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setDefaultAddress = useCallback((id: string) => {
     if (!user) return;
 
-    const updatedAddresses = user.addresses.map(a => ({
+    const updatedAddresses = user.addresses.map((a) => ({
       ...a,
       isDefault: a.id === id,
     }));
-    
+
     const updatedUser = { ...user, addresses: updatedAddresses };
     setUser(updatedUser);
     saveUserToStorage(updatedUser);
@@ -291,6 +298,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     deleteAddress,
     setDefaultAddress,
     getDefaultAddress,
+    updateProfile,
     isLoading,
     isInitialized,
   };

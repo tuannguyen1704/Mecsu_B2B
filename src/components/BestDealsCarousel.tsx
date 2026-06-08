@@ -70,7 +70,10 @@ export default function BestDealsCarousel({
                       onClick={() => onViewDetails(product)}
                     >
                       <OptimizedImage
-                        src={getRandomImage(product.name || product.id) || product.image}
+                        src={
+                          getRandomImage(product.name || product.id) ||
+                          product.image
+                        }
                         alt={product.name}
                         className="max-h-full max-w-full"
                       />
@@ -93,11 +96,17 @@ export default function BestDealsCarousel({
                         <span className="text-[12px] text-slate-400 line-through">
                           {(originalPrice * 1.2).toLocaleString()} đ
                         </span>
-                        <span className="text-[12px]" style={{ color: "#bb2a3e" }}>
+                        <span
+                          className="text-[12px]"
+                          style={{ color: "#bb2a3e" }}
+                        >
                           {discountPercent}% off
                         </span>
                       </div>
-                      <div className="text-[18px] font-bold mb-2" style={{ color: "#bb2a3e" }}>
+                      <div
+                        className="text-[18px] font-bold mb-2"
+                        style={{ color: "#bb2a3e" }}
+                      >
                         {currentPrice.toLocaleString()} đ / cái
                       </div>
 
@@ -107,7 +116,7 @@ export default function BestDealsCarousel({
                         onClick={() => onAddToCart(product, 1)}
                         className="w-full py-2 bg-brand-primary border-brand-primary text-brand-secondary hover:bg-brand-primary/90 font-bold text-[13px] transition-colors rounded-sm"
                       >
-                        Choose Options
+                        Thêm vào giỏ
                       </button>
                     </div>
                   </div>

@@ -13,6 +13,7 @@ import { Product, BlogPost } from './types';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { cartService } from './features/cart/services/cartService';
 import { orderStorage } from './services/orderStorage';
+import { productService } from './features/products/services/productService';
 import { generateProductUrl, toSlug, parseSkuFromUrl } from './lib/utils';
 
 // Lazy loaded components
@@ -43,10 +44,11 @@ const OrderDetailPage = lazy(() => import('./pages/account/OrderDetailPage'));
 const ReturnDetailPage = lazy(() => import('./pages/account/ReturnDetailPage'));
 const CreateReturnPage = lazy(() => import('./pages/account/CreateReturnPage'));
 const AddressesPage = lazy(() => import('./pages/account/AddressesPage'));
-const QuotesPage = lazy(() => import('./pages/account/EmptyStatePage').then(m => ({ default: m.QuotesPage })));
-const PaymentMethodsPage = lazy(() => import('./pages/account/EmptyStatePage').then(m => ({ default: m.PaymentMethodsPage })));
-const WishlistPage = lazy(() => import('./pages/account/EmptyStatePage').then(m => ({ default: m.WishlistPage })));
-const ReturnsPage = lazy(() => import('./pages/account/EmptyStatePage').then(m => ({ default: m.ReturnsPage })));
+const AccountInfoPage = lazy(() => import('./pages/account/AccountInfoPage'));
+const QuotationCenter = lazy(() => import('./pages/account/QuotationCenter'));
+const QuotationDetailPage = lazy(() => import('./pages/account/QuotationDetailPage'));
+const CustomerSupportPage = lazy(() => import('./pages/account/CustomerSupportPage'));
+const MarketingEmailSettingsPage = lazy(() => import('./pages/account/MarketingEmailSettingsPage'));
 
 // UI Components
 import OrderSuccessPage from './components/OrderSuccessPage';
@@ -79,6 +81,55 @@ const ScrollToTop = () => {
   }, [pathname]);
 
   return null;
+};
+
+// Session storage key for restoring browsing position
+const PREV_LOCATION_KEY = 'prevBrowseLocation';
+
+interface PrevLocation {
+  url: string;
+  scrollY: number;
+}
+
+// Save current browsing location (call before navigating to cart)
+export const savePrevBrowseLocation = () => {
+  try {
+    const prev = {
+      url: window.location.pathname + window.location.search,
+      scrollY: window.scrollY
+    };
+    sessionStorage.setItem(PREV_LOCATION_KEY, JSON.stringify(prev));
+  } catch {
+    // ignore storage errors
+  }
+};
+
+// Get saved browsing location
+export const getPrevBrowseLocation = (): PrevLocation | null => {
+  try {
+    const stored = sessionStorage.getItem(PREV_LOCATION_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return null;
+};
+
+// Navigate back to previous location and restore scroll position
+export const restorePrevBrowseLocation = (navigate: (url: string) => void, defaultUrl = '/') => {
+  const prev = getPrevBrowseLocation();
+  const url = prev?.url || defaultUrl;
+  navigate(url);
+  // Restore scroll after navigation completes
+  setTimeout(() => {
+    if (prev?.scrollY) {
+      window.scrollTo({ top: prev.scrollY, behavior: 'instant' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, 50);
 };
 
 // Unified route handler - decides which page to render based on URL
@@ -114,27 +165,29 @@ const BlogPostPageRoute = ({ onBack }: any) => {
 
 const ProductDetailRoute = ({ onBack, onAddToCart, onSelectRelated }: any) => {
   const { productId } = useParams();
-  // First try to find product in static PRODUCTS array
+  // First try to find product in static PRODUCTS array by id
   let product = PRODUCTS.find(p => p.id === productId);
-  
+
+  // Fall back: try to find by sku (order items use sku instead of id)
+  if (!product) {
+    product = productService.getBySku(productId || '');
+  }
+
   // If not found, try to get from sessionStorage (for mock products)
   if (!product) {
     try {
       const stored = sessionStorage.getItem('selectedProduct');
       if (stored) {
         product = JSON.parse(stored);
-        // Verify the ID matches
         if (product.id !== productId) {
           product = null;
         }
       }
-    } catch (e) {
-      console.log('[DEBUG] Error parsing stored product:', e);
+    } catch {
+      // ignore parse errors
     }
   }
-  
-  console.log('[DEBUG] productId:', productId);
-  console.log('[DEBUG] found product:', product?.name);
+
   if (!product) return <Navigate to="/" />;
   return (
     <ProductPage
@@ -225,7 +278,7 @@ const CartApp = () => {
     if (cartPopupItem) {
       const timer = setTimeout(() => {
         setCartPopupItem(null);
-      }, 5000);
+      }, 1500);
       return () => clearTimeout(timer);
     }
   }, [cartPopupItem]);
@@ -234,6 +287,7 @@ const CartApp = () => {
   const cartTotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
 
   const handleNavigateToCart = React.useCallback(() => {
+    savePrevBrowseLocation();
     navigate('/gio-hang');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [navigate]);
@@ -394,6 +448,10 @@ const CartApp = () => {
 
 const isResourceHubRoute = location.pathname.startsWith('/resource-hub');
 const isBlogRoute = location.pathname.startsWith('/blog');
+const isAccountRoute = location.pathname.startsWith('/tai-khoan');
+// Listing pages: any path that isn't a known route and has category-like segments (not just /)
+const KNOWN_NON_LISTING = ['/gio-hang', '/thanh-toan', '/san-pham', '/tim-kiem', '/gioi-thieu', '/dich-vu-khach-hang', '/faqs', '/dang-nhap', '/dang-ky', '/quen-mat-khau', '/blog', '/resource-hub'];
+const isListingRoute = !isBlogRoute && !isResourceHubRoute && !isAccountRoute && location.pathname !== '/' && !KNOWN_NON_LISTING.some(p => location.pathname.startsWith(p));
 const isCartView = false; // Always render Header and Footer
 
   return (
@@ -416,6 +474,7 @@ const isCartView = false; // Always render Header and Footer
           onNavigateToCheckout={handleNavigateToCheckout}
           onAddToCart={handleAddToCart}
           isHomePage={location.pathname === '/'}
+          disableSticky={isAccountRoute || isListingRoute}
           orderJustCompleted={orderJustCompleted}
           onOrderAnimationComplete={() => setOrderJustCompleted(false)}
         />
@@ -461,7 +520,7 @@ const isCartView = false; // Always render Header and Footer
             <Route path="/gio-hang" element={
               <CartPage 
                 items={cartItems}
-                onBack={handleBackToHome}
+                onBack={() => restorePrevBrowseLocation((url) => navigate(url), '/')}
                 onUpdateQuantity={handleUpdateCartQuantity}
                 onRemoveItem={handleRemoveFromCart}
                 onCheckout={handleNavigateToCheckout}
@@ -561,14 +620,33 @@ const isCartView = false; // Always render Header and Footer
               <AddressesPage />
             } />
 
+            <Route path="/tai-khoan/thong-tin-ca-nhan" element={
+              <AccountInfoPage />
+            } />
+
+            {/* Quotation routes */}
             <Route path="/tai-khoan/bao-gia" element={
-              <QuotesPage />
+              <QuotationCenter />
+            } />
+
+            <Route path="/tai-khoan/bao-gia/:id" element={
+              <QuotationDetailPage />
+            } />
+
+            <Route path="/tai-khoan/ho-tro" element={
+              <CustomerSupportPage />
+            } />
+
+            <Route path="/tai-khoan/marketing-email" element={
+              <MarketingEmailSettingsPage />
             } />
 
             <Route path="/tai-khoan/dia-chi" element={
               <AddressesPage />
             } />
 
+            {/* Temporarily disabled - components unavailable */}
+            {/* 
             <Route path="/tai-khoan/thanh-toan" element={
               <PaymentMethodsPage />
             } />
@@ -580,6 +658,7 @@ const isCartView = false; // Always render Header and Footer
             <Route path="/tai-khoan/doi-tra" element={
               <ReturnsPage />
             } />
+            */}
 
             <Route path="/san-pham/:productId" element={
               <ProductDetailRoute

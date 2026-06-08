@@ -16,6 +16,7 @@ interface HighlightSectionProps {
   imagePath: string;
   filterKeyword: string;
   accentColor?: string;
+  forceOutOfStock?: boolean;
 }
 
 const HighlightSection = ({ 
@@ -29,7 +30,8 @@ const HighlightSection = ({
   buttonText,
   imagePath,
   filterKeyword,
-  accentColor = "text-brand-primary"
+  accentColor = "text-brand-primary",
+  forceOutOfStock = false,
 }: HighlightSectionProps) => {
   const [page, setPage] = useState(0);
   const [direction, setDirection] = useState(0);
@@ -189,6 +191,7 @@ const HighlightSection = ({
                       onAddToCart={(qty) => onAddToCart(product, qty)}
                       onQuickView={() => onQuickView(product)}
                       onViewDetails={() => onViewDetails(product)}
+                      forceOutOfStock={forceOutOfStock}
                     />
                   </div>
                 ))}

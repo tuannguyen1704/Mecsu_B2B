@@ -2,11 +2,11 @@
  * auth.ts
  * 
  * Type definitions cho Authentication
- * KHÔNG chứa password - dùng Supabase Auth để quản lý
+ * Lưu ý: KHÔNG lưu password - quản lý qua localStorage
  */
 
 // ============================================
-// ĐỊA CHỈ (ADDRESS)
+// ĐỊA CH� (ADDRESS)
 // ============================================
 
 export interface Address {
@@ -22,14 +22,33 @@ export interface Address {
 }
 
 // ============================================
-// USER (SUPABASE AUTH)
+// USER
 // ============================================
 
 /**
  * User interface - dùng cho app state
  * Lưu ý: KHÔNG lưu password ở đây
- * Supabase Auth quản lý password riêng
  */
+export interface MarketingPreferencesCategory {
+  id: 'promotions' | 'newProducts' | 'technicalNews' | 'webinars' | 'marketReports' | 'support';
+  enabled: boolean;
+}
+
+export interface MarketingPreferencesStats {
+  totalReceived: number;
+  totalOpened: number;
+  openRate: number;
+  lastInteraction: string;
+}
+
+export interface MarketingPreferences {
+  enabled: boolean;
+  categories: MarketingPreferencesCategory[];
+  frequency: 'instant' | 'weekly' | 'biweekly' | 'monthly';
+  preferredTime: 'morning' | 'afternoon' | 'anytime';
+  stats?: MarketingPreferencesStats;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -37,9 +56,17 @@ export interface User {
   phone: string;
   addresses: Address[];
   createdAt: string;
-  // Metadata từ Supabase
   lastSignInAt?: string;
   emailConfirmed?: boolean;
+  gender?: 'male' | 'female' | 'other' | '';
+  birthDate?: string;
+  company?: string;
+  taxCode?: string;
+  companyAddress?: string;
+  companyRepresentative?: string;
+  customerGroup?: string;
+  currentDiscount?: string;
+  marketingPreferences?: MarketingPreferences;
 }
 
 // ============================================

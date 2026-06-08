@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ChevronLeft,
@@ -29,6 +30,10 @@ import {
   Info,
   AlertCircle,
   Plus,
+  Copy,
+  Loader2,
+  QrCode,
+  Timer,
 } from 'lucide-react';
 import { Product } from '../types';
 import { useSupabaseImages } from '../hooks/useSupabaseImages';
@@ -37,6 +42,7 @@ import { Address, PROVINCES, DISTRICTS, WARDS } from '../types/auth';
 import AddressCard from './ui/AddressCard';
 import AddressPicker from './AddressPicker';
 import AddressModal from './AddressModal';
+import Toast from './ui/Toast';
 
 const STORAGE_KEY = 'mecsu_checkout_form';
 
@@ -322,26 +328,26 @@ function CollapsibleSection({ title, subtitle, icon, isExpanded, onToggle, defau
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
       <button
         type="button"
         onClick={handleToggle}
-        className="w-full flex items-center justify-between p-6 hover:bg-slate-50/50 transition-colors"
+        className="w-full flex items-center justify-between p-4 hover:bg-slate-50/50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-brand-secondary/10 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-lg bg-brand-secondary/10 flex items-center justify-center">
             <span className="text-brand-secondary">{icon}</span>
           </div>
           <div className="text-left">
-            <h2 className="text-lg font-bold text-slate-900">{title}</h2>
-            {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+            <h2 className="text-base font-bold text-slate-900">{title}</h2>
+            {subtitle && <p className="text-[11px] text-slate-500">{subtitle}</p>}
           </div>
         </div>
         <motion.div
           animate={{ rotate: isExpanded ? 180 : 0 }}
           transition={{ duration: 0.2 }}
         >
-          <ChevronDown size={20} className="text-slate-400" />
+          <ChevronDown size={18} className="text-slate-400" />
         </motion.div>
       </button>
       <AnimatePresence>
@@ -353,12 +359,129 @@ function CollapsibleSection({ title, subtitle, icon, isExpanded, onToggle, defau
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-6 pb-6 border-t border-slate-100 pt-4">
+            <div className="px-4 pb-4 border-t border-slate-100 pt-0">
               {children}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// Copy Button Component
+interface CopyButtonProps {
+  textToCopy: string;
+  onCopied?: () => void;
+}
+
+function CopyButton({ textToCopy, onCopied }: CopyButtonProps) {
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      onCopied?.();
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-[#173E75] hover:bg-[#173E75]/10 rounded-lg transition-colors"
+      title="Sao chép"
+    >
+      <Copy size={12} />
+      <span>Sao chép</span>
+    </button>
+  );
+}
+
+// QR Payment Panel Component
+interface QRPaymentPanelProps {
+  onCopied: (message: string) => void;
+  paymentStatus: 'pending' | 'confirmed';
+}
+
+function QRPaymentPanel({ onCopied, paymentStatus }: QRPaymentPanelProps) {
+  const bankDetails = {
+    bankName: 'MB Bank',
+    accountHolder: 'CÔNG TY TNHH MECSU',
+    accountNumber: '0900000000',
+    transferContent: 'MECSU-ORD-000123',
+  };
+
+  return (
+    <div className="mt-2 bg-white border border-[#E2E8F0] rounded-[18px] p-4">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <QrCode size={18} className="text-[#173E75]" />
+          <h3 className="text-sm font-bold text-[#111827]">Thanh toán bằng mã QR</h3>
+        </div>
+        <span
+          className={`inline-flex px-3 py-1 text-[12px] font-semibold rounded-full ${
+            paymentStatus === 'pending'
+              ? 'bg-[#FEF3C7] text-[#92400E]'
+              : 'bg-green-100 text-green-700'
+          }`}
+        >
+          {paymentStatus === 'pending' ? 'Đang chờ thanh toán' : 'Đã thanh toán'}
+        </span>
+      </div>
+
+      {/* Body - 2 columns on desktop, stacked on mobile */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* Left Column - QR Code */}
+        <div className="flex flex-col items-center">
+          <div className="bg-white border border-[#E5E7EB] rounded-2xl p-2">
+            <img
+              src="/assets/images/QR.png"
+              alt="QR Code thanh toán"
+              className="w-[200px] h-[200px] md:w-[240px] md:h-[240px] rounded-2xl object-cover"
+            />
+          </div>
+        </div>
+
+        {/* Right Column - Bank Details */}
+        <div className="space-y-2">
+          <div>
+            <p className="text-[11px] font-medium text-[#64748B] uppercase tracking-wide mb-1">Ngân hàng</p>
+            <p className="text-sm font-semibold text-[#111827]">{bankDetails.bankName}</p>
+          </div>
+
+          <div>
+            <p className="text-[11px] font-medium text-[#64748B] uppercase tracking-wide mb-1">Chủ tài khoản</p>
+            <p className="text-sm font-semibold text-[#111827]">{bankDetails.accountHolder}</p>
+          </div>
+
+          <div>
+            <p className="text-[11px] font-medium text-[#64748B] uppercase tracking-wide mb-1">Số tài khoản</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-[#111827] font-mono">{bankDetails.accountNumber}</p>
+              <CopyButton
+                textToCopy={bankDetails.accountNumber}
+                onCopied={() => onCopied('Đã sao chép số tài khoản')}
+              />
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[11px] font-medium text-[#64748B] uppercase tracking-wide mb-1">Nội dung chuyển khoản</p>
+            <div className="flex items-center gap-2">
+              <div className="bg-[#F8FAFC] border border-dashed border-[#CBD5E1] rounded-xl px-4 py-2.5">
+                <span className="text-sm font-bold text-[#173E75] font-mono tracking-wide">
+                  {bankDetails.transferContent}
+                </span>
+              </div>
+              <CopyButton
+                textToCopy={bankDetails.transferContent}
+                onCopied={() => onCopied('Đã sao chép nội dung chuyển khoản')}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -370,6 +493,7 @@ interface CheckoutPageProps {
 }
 
 export default function CheckoutPage({ items, onBack, onOrderComplete }: CheckoutPageProps) {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const { getRandomImage } = useSupabaseImages();
   const { user, isLoggedIn, getDefaultAddress, addAddress, updateAddress, deleteAddress, setDefaultAddress } = useAuth();
@@ -385,6 +509,49 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+
+  // Toast notification state
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Payment confirmation loading state
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  // QR Payment auto-confirmation state
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'confirmed'>('pending');
+  const [countdown, setCountdown] = useState(4);
+
+  // Auto-confirmation for bank transfer after 4 seconds on step 3
+  useEffect(() => {
+    if (step === 3 && formData.paymentMethod === 'bank' && paymentStatus === 'pending') {
+      setCountdown(4);
+      const interval = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setPaymentStatus('confirmed');
+            // Wait a moment to show "Đã thanh toán" status, then navigate
+            setTimeout(() => {
+              handleSubmit();
+              navigate('/thanh-cong');
+            }, 800);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [step, formData.paymentMethod]);
+
+  // Reset payment status when leaving step 3 or changing payment method away from bank
+  // Don't reset if we're navigating to success page
+  useEffect(() => {
+    if (step !== 3 && formData.paymentMethod !== 'bank') {
+      setPaymentStatus('pending');
+      setCountdown(4);
+    }
+  }, [step, formData.paymentMethod]);
 
   // Auto-fill from user profile
   useEffect(() => {
@@ -704,9 +871,20 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
 
       if (!getStep1Validity()) return;
     }
-    
-    if (step < 3) setStep(step + 1);
-    else handleSubmit();
+
+    if (step < 3) {
+      setStep(step + 1);
+    } else {
+      // Step 3 - For bank transfer, trigger auto-confirmation countdown
+      if (formData.paymentMethod === 'bank' && paymentStatus === 'pending') {
+        // Start 4 second countdown for auto-confirmation
+        setCountdown(4);
+        setPaymentStatus('pending');
+      } else {
+        // Already confirmed or not bank transfer - proceed
+        handleSubmit();
+      }
+    }
   };
 
   const handlePrevStep = () => {
@@ -778,7 +956,8 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
       b2bDiscount,
       vatAmount,
       total: grandTotal,
-      orderId: 'MEC-' + Math.random().toString(36).substr(2, 9).toUpperCase()
+      orderId: 'MEC-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+      paymentMethod: formData.paymentMethod,
     });
   };
 
@@ -797,32 +976,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20 lg:pb-0">
-      {/* Minimal Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors">
-              <ChevronLeft size={20} />
-              <span className="text-sm font-medium hidden sm:block">Quay lại</span>
-            </button>
-            <div className="w-px h-6 bg-slate-200 mx-2 hidden sm:block" />
-            <img src={mecsuLogo} alt="MECSU" className="h-7 sm:h-8" />
-          </div>
-
-          <div className="flex items-center gap-4 sm:gap-6">
-            <div className="hidden sm:flex items-center gap-2 text-slate-500">
-              <ShieldCheck size={16} className="text-green-600" />
-              <span className="text-xs font-medium">Thanh toán bảo mật</span>
-            </div>
-            <div className="hidden md:flex items-center gap-2 text-slate-500">
-              <HeadphonesIcon size={16} className="text-brand-secondary" />
-              <span className="text-xs font-medium">Hỗ trợ: 1800 8137</span>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Progress Indicator - Improved */}
+      {/* Progress Indicator */}
       <div className="bg-white border-b border-slate-100">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3">
           <div className="flex items-center justify-center gap-2 sm:gap-4">
@@ -860,10 +1014,10 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-4 sm:py-5">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
           {/* Left Column - Forms */}
-          <div className="lg:col-span-7 space-y-4 sm:space-y-6">
+          <div className="lg:col-span-7 space-y-3 sm:space-y-4">
             <AnimatePresence mode="wait">
               {/* Step 1: Shipping Information */}
               {step === 1 && (
@@ -873,7 +1027,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-4 sm:space-y-6"
+                  className="space-y-3 sm:space-y-4"
                 >
                   {/* Buyer Information - Only show for guests */}
                   {!isLoggedIn ? (
@@ -884,8 +1038,8 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                       isExpanded={true}
                       defaultExpanded={true}
                     >
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1">
                           <label className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${
                             errors.fullName && touched.fullName ? 'text-red-500' : 'text-slate-500'
                           }`}>
@@ -909,7 +1063,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                             </p>
                           )}
                         </div>
-                        <div className="space-y-1.5">
+                        <div className="space-y-1">
                           <label className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${
                             errors.phone && touched.phone ? 'text-red-500' : 'text-slate-500'
                           }`}>
@@ -933,7 +1087,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                             </p>
                           )}
                         </div>
-                        <div className="space-y-1.5">
+                        <div className="space-y-1">
                           <label className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${
                             errors.email && touched.email ? 'text-red-500' : 'text-slate-500'
                           }`}>
@@ -960,7 +1114,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                         </div>
                         {formData.companyName && (
                         <>
-                          <div className="space-y-1.5">
+                          <div className="space-y-1">
                             <label className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${
                               errors.companyName && touched.companyName ? 'text-red-500' : 'text-slate-500'
                             }`}>
@@ -984,7 +1138,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                               </p>
                             )}
                           </div>
-                          <div className="space-y-1.5">
+                          <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">
                               Mã số thuế
                             </label>
@@ -1036,7 +1190,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                               transition={{ duration: 0.2 }}
                               className="overflow-hidden"
                             >
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-100">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-100">
                                 <div className="space-y-1.5 md:col-span-2">
                                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">
                                     Tên công ty trên hóa đơn
@@ -1049,7 +1203,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                                     className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/10 outline-none transition-all"
                                   />
                                 </div>
-                                <div className="space-y-1.5">
+                                <div className="space-y-1">
                                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">
                                     Mã số thuế
                                   </label>
@@ -1061,7 +1215,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                                     className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/10 outline-none transition-all"
                                   />
                                 </div>
-                                <div className="space-y-1.5">
+                                <div className="space-y-1">
                                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">
                                     Email nhận hóa đơn
                                   </label>
@@ -1164,7 +1318,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                       {/* TRƯỜNG HỢP 3: CHƯA đăng nhập - Show Address Form */}
                       {!isLoggedIn && (
                         /* Show AddressForm if no addresses */
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <CustomSelect
                             label="Tỉnh / Thành phố *"
                             options={PROVINCES}
@@ -1188,7 +1342,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                             placeholder="Chọn phường/xã"
                             disabled={!formData.district}
                           />
-                          <div className="space-y-1.5">
+                          <div className="space-y-1">
                             <label className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${
                               errors.address && touched.address ? 'text-red-500' : 'text-slate-500'
                             }`}>
@@ -1279,7 +1433,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-4 sm:space-y-6"
+                  className="space-y-3 sm:space-y-4"
                 >
                   {/* Payment Method */}
                   <CollapsibleSection
@@ -1336,7 +1490,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                       onToggle={() => setB2bExpanded(!b2bExpanded)}
                     >
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                        <div className="space-y-1.5">
+                        <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">
                             Số PO (Purchase Order)
                           </label>
@@ -1348,7 +1502,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                             className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/10 outline-none transition-all"
                           />
                         </div>
-                        <div className="space-y-1.5">
+                        <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">
                             Mã yêu cầu nội bộ
                           </label>
@@ -1428,7 +1582,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-4 sm:space-y-6"
+                  className="space-y-3 sm:space-y-4"
                 >
                   {/* Order Summary Review */}
                   <CollapsibleSection
@@ -1439,6 +1593,14 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                     defaultExpanded={true}
                   >
                     <div className="space-y-4 pt-4">
+                      {/* QR Payment Panel - Only show for bank transfer */}
+                      {formData.paymentMethod === 'bank' && (
+                        <QRPaymentPanel
+                          onCopied={(msg) => setToast({ message: msg, type: 'success' })}
+                          paymentStatus={paymentStatus}
+                        />
+                      )}
+
                       {/* Shipping Info */}
                       <div className="p-4 bg-slate-50 rounded-xl">
                         <div className="flex items-start gap-3">
@@ -1550,22 +1712,49 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
               <button
                 type="button"
                 onClick={handleNextStep}
-                disabled={step === 1 && !isStep1Valid}
+                disabled={
+                  (step === 1 && !isStep1Valid) ||
+                  (step === 3 && formData.paymentMethod === 'bank' && paymentStatus === 'pending') ||
+                  isConfirming
+                }
                 className={`flex items-center gap-2 px-6 sm:px-8 py-3.5 rounded-xl font-bold text-sm transition-all ${
-                  step === 1 && !isStep1Valid
+                  (step === 1 && !isStep1Valid) ||
+                  (step === 3 && formData.paymentMethod === 'bank' && paymentStatus === 'pending') ||
+                  isConfirming
                     ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                     : 'bg-brand-secondary text-white hover:bg-brand-secondary/90 shadow-lg shadow-brand-secondary/25'
                 }`}
               >
-                <span>{step === 3 ? 'Xác nhận đặt hàng' : 'Tiếp tục'}</span>
-                <ArrowRight size={18} />
+                {isConfirming ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>Đang xác nhận...</span>
+                  </>
+                ) : step === 3 && formData.paymentMethod === 'bank' && paymentStatus === 'pending' ? (
+                  <>
+                    <Clock size={18} />
+                    <span>Tự động xác nhận sau {countdown}s</span>
+                  </>
+                ) : (
+                  <>
+                    <span>
+                      {step === 3
+                        ? formData.paymentMethod === 'bank'
+                          ? 'Tôi đã chuyển khoản'
+                          : 'Xác nhận đặt hàng'
+                        : 'Tiếp tục'
+                      }
+                    </span>
+                    {!isConfirming && <ArrowRight size={18} />}
+                  </>
+                )}
               </button>
             </div>
           </div>
 
           {/* Right Column - Order Summary */}
           <div className="lg:col-span-5">
-            <div className="lg:sticky lg:top-28 space-y-4">
+            <div className="lg:sticky lg:top-28 space-y-3">
               {/* Mobile Toggle */}
               <button
                 onClick={() => setMobileSummaryOpen(!mobileSummaryOpen)}
@@ -1606,7 +1795,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                     </div>
 
                     {/* Products */}
-                    <div className="p-5 sm:p-6 max-h-[280px] overflow-y-auto space-y-4">
+                    <div className="p-4 sm:p-5 max-h-[240px] overflow-y-auto space-y-3">
                       {items.map((item) => (
                         <div key={item.product.id} className="flex gap-3 sm:gap-4">
                           <div className="w-14 h-14 sm:w-16 sm:h-16 bg-slate-50 rounded-lg flex items-center justify-center p-2 shrink-0">
@@ -1632,7 +1821,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
                     </div>
 
                     {/* Pricing */}
-                    <div className="p-5 sm:p-6 border-t border-slate-100 space-y-2.5 sm:space-y-3">
+                    <div className="p-4 sm:p-5 border-t border-slate-100 space-y-2 sm:space-y-2.5">
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-500">Tạm tính</span>
                         <span className="font-medium text-slate-900">{subtotal.toLocaleString('vi-VN')}đ</span>
@@ -1668,7 +1857,7 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
 
               {/* Trust Notes */}
               <div className="bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-100">
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <div className="flex items-start gap-2">
                     <Receipt size={14} className="text-brand-secondary mt-0.5 shrink-0" />
                     <p className="text-[11px] sm:text-xs text-slate-600 font-medium">Hỗ trợ xuất hóa đơn VAT</p>
@@ -1703,16 +1892,32 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
         <button
           type="button"
           onClick={handleNextStep}
-          disabled={step === 1 && !isStep1Valid}
+          disabled={step === 1 && !isStep1Valid || isConfirming}
           className={`w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
-            step === 1 && !isStep1Valid
+            step === 1 && !isStep1Valid || isConfirming
               ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
               : 'bg-brand-secondary text-white hover:bg-brand-secondary/90'
           }`}
         >
-          <Lock size={16} />
-          <span>{step === 3 ? 'Xác nhận đặt hàng' : 'Tiếp tục thanh toán'}</span>
-          <span className="font-black ml-2">{grandTotal.toLocaleString('vi-VN')}đ</span>
+          {isConfirming ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              <span>Đang xác nhận...</span>
+            </>
+          ) : (
+            <>
+              <Lock size={16} />
+              <span>
+                {step === 3
+                  ? formData.paymentMethod === 'bank'
+                    ? 'Tôi đã chuyển khoản'
+                    : 'Xác nhận đặt hàng'
+                  : 'Tiếp tục thanh toán'
+                }
+              </span>
+              {!isConfirming && <span className="font-black ml-2">{grandTotal.toLocaleString('vi-VN')}đ</span>}
+            </>
+          )}
         </button>
       </div>
 
@@ -1741,6 +1946,15 @@ export default function CheckoutPage({ items, onBack, onOrderComplete }: Checkou
         currentUserName={user?.fullName}
         currentUserPhone={user?.phone}
       />
+
+      {/* Toast Notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

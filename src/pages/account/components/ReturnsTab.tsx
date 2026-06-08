@@ -19,9 +19,9 @@ export const ReturnsTab: React.FC<ReturnsTabProps> = ({
   const hasRequests = requests.length > 0;
 
   return (
-    <div className="space-y-5 w-full max-w-full">
+    <div className="space-y-3 w-full max-w-full">
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-[#E5EAF2] p-4 lg:p-6">
+      <div className="bg-white rounded-2xl border border-[#E5EAF2] p-3 lg:p-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
             <h3 className="text-lg font-bold text-slate-800">Yêu cầu đổi/trả hàng</h3>
@@ -44,7 +44,7 @@ export const ReturnsTab: React.FC<ReturnsTabProps> = ({
 
       {/* Content */}
       {hasRequests ? (
-        <div className="space-y-4 w-full max-w-full">
+        <div className="space-y-3 w-full max-w-full">
           {requests.map((request) => (
             <ReturnRequestCard
               key={request.id}
