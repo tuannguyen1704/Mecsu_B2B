@@ -64,19 +64,19 @@ export default function ShopCategoriesGrid() {
   };
 
   return (
-    <section className="bg-white pt-12 pb-8 font-sans">
+    <section className="bg-white pt-4 pb-4 font-sans">
       <div className="max-w-[1600px] mx-auto px-6 lg:px-12 text-left">
-        <h2 className="text-3xl font-bold text-slate-900 mb-[7px] tracking-tight">
+        <h2 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">
           Shop categories
         </h2>
 
-        <div className="flex flex-wrap items-center gap-6 mb-8 pb-6">
+        <div className="flex flex-wrap items-center gap-4 mb-5 pb-4">
           <div className="flex items-center gap-1">
             <button
               onClick={() => setActiveTab("top")}
               className={`px-6 py-2.5 text-[15px] font-bold rounded-md transition-all ${
                 activeTab === "top"
-                  ? "bg-[#24465B] text-white"
+                  ? "bg-[#163F78] text-white"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
@@ -87,7 +87,7 @@ export default function ShopCategoriesGrid() {
               onClick={() => setActiveTab("industry")}
               className={`px-6 py-2.5 text-[15px] font-bold rounded-md transition-all ${
                 activeTab === "industry"
-                  ? "bg-[#24465B] text-white"
+                  ? "bg-[#163F78] text-white"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
@@ -99,7 +99,7 @@ export default function ShopCategoriesGrid() {
             {INDUSTRIES.map((ind) => (
               <button
                 key={ind}
-                className="px-5 py-2 border border-slate-300 rounded-full text-[13px] font-medium text-slate-600 hover:border-[#24465B] hover:text-[#24465B] transition-all"
+                className="px-5 py-2 border border-slate-300 rounded-md text-[13px] font-medium text-slate-600 hover:border-[#163F78] hover:text-[#163F78] transition-all"
               >
                 {ind}
               </button>
@@ -107,7 +107,7 @@ export default function ShopCategoriesGrid() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-y-10 gap-x-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-y-8 gap-x-6 items-start">
           {displayCategories.map((cat) => {
             const Icon = ICON_MAP[cat.icon as string] || Wrench;
             // Display first 4 subcategories
@@ -115,20 +115,20 @@ export default function ShopCategoriesGrid() {
 
             return (
               <div key={cat.id} className="flex flex-col h-full bg-transparent">
-                <div className="bg-[#F2F2F2] p-6 mb-4 rounded-lg shadow-sm">
+                <div className="bg-[#F2F2F2] p-4 mb-3 rounded-md shadow-sm">
                   <h3 className="text-[17px] font-bold text-slate-900 leading-tight">
                     {cat.name}
                   </h3>
                 </div>
 
-                <div className="flex flex-col gap-3">
-                  <ul className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
+                  <ul className="flex flex-col gap-1">
                     {subs.map((sub, idx) => {
                       const projectImage = getRandomImage(sub);
                       return (
                         <li
                           key={idx}
-                          className="group cursor-pointer flex items-center gap-4"
+                          className="group cursor-pointer flex items-center gap-3"
                         >
                           <button
                             onClick={() => handleSubcategoryClick(cat, sub)}
@@ -157,7 +157,7 @@ export default function ShopCategoriesGrid() {
                     })}
                   </ul>
 
-                  <div className="mt-2">
+                  <div className="mt-1">
                     <button 
                       onClick={() => handleShopAllClick(cat)} 
                       className="text-[15px] font-medium text-blue-600 hover:underline flex items-center gap-1 group cursor-pointer"

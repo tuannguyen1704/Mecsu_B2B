@@ -11,7 +11,8 @@ import {
   ShoppingCart,
   Eye,
   ArrowRight,
-  Plus
+  Plus,
+  DollarSign
 } from 'lucide-react';
 import { AccountLayout } from './components/AccountLayout';
 import { StatCard } from './components/StatCard';
@@ -26,21 +27,27 @@ import {
   accountModules,
   orderStatusConfig,
   formatPrice,
-  formatDate 
+  formatDate,
+  formatCompactPrice
 } from './data/accountData';
 import { cn } from '../../lib/utils';
 
 const AccountDashboard: React.FC = () => {
   const { user } = useAuth();
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [allOrders, setAllOrders] = useState<any[]>([]);
 
   useEffect(() => {
     if (user) {
       orderStorage.initDemoOrders(user.id, user.fullName);
       const orders = orderStorage.getOrders(user.id);
+      setAllOrders(orders);
       setRecentOrders(orders.slice(0, 3));
     }
   }, [user]);
+
+  // Compute total order value from real orders
+  const totalOrderValue = allOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
 
   // Build user info from auth
   const userInfo = user
@@ -61,7 +68,7 @@ const AccountDashboard: React.FC = () => {
         </div>
 
         {/* Stats Overview Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
           <StatCard
             icon={Package}
             value={accountStats.openOrders}
@@ -73,7 +80,6 @@ const AccountDashboard: React.FC = () => {
             value={accountStats.completedOrders}
             label="Đơn hàng hoàn tất"
             iconColor="green"
-            trend={{ value: 12, isPositive: true }}
           />
           <StatCard
             icon={Heart}
@@ -87,10 +93,17 @@ const AccountDashboard: React.FC = () => {
             label="Báo giá"
             iconColor="blue"
           />
+          <StatCard
+            icon={DollarSign}
+            value={formatCompactPrice(totalOrderValue)}
+            label="Tổng giá trị đơn hàng"
+            iconColor="blue"
+            className="overflow-hidden"
+          />
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-2xl border border-[#E5EAF2] p-3 lg:p-4">
+        <div className="bg-white rounded-md border border-[#E5EAF2] p-3 lg:p-4">
           <h2 className="text-lg font-bold text-slate-900 mb-2">Thao tác nhanh</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {quickActions.map((action) => {
@@ -137,7 +150,7 @@ const AccountDashboard: React.FC = () => {
         </div>
 
         {/* Recent Orders */}
-        <div className="bg-white rounded-2xl border border-[#E5EAF2] p-3 lg:p-4">
+        <div className="bg-white rounded-md border border-[#E5EAF2] p-3 lg:p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold text-slate-900">Đơn hàng gần đây</h2>
             <Link 
@@ -197,7 +210,7 @@ const AccountDashboard: React.FC = () => {
         </div>
 
         {/* Quick Reorder */}
-        <div className="bg-white rounded-2xl border border-[#E5EAF2] p-3 lg:p-4">
+        <div className="bg-white rounded-md border border-[#E5EAF2] p-3 lg:p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold text-slate-900">Mua lại nhanh</h2>
             <Link 
@@ -255,7 +268,7 @@ const AccountDashboard: React.FC = () => {
         </div>
 
         {/* Account Modules Grid */}
-        <div className="bg-white rounded-2xl border border-[#E5EAF2] p-3 lg:p-4">
+        <div className="bg-white rounded-md border border-[#E5EAF2] p-3 lg:p-4">
           <h2 className="text-lg font-bold text-slate-900 mb-3">Quản lý tài khoản</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {accountModules.map((module) => (

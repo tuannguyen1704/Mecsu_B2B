@@ -59,12 +59,12 @@ const ProductWidget = ({ title, products, onAddToCart, onViewDetails, isLoading 
   const cleanName = mainProduct.name.replace(/\s*\([^)]*\)/, '');
 
   return (
-    <div className="bg-white p-3 flex flex-col h-[300px] font-sans transition-all group/container rounded-xl">
+    <div className="bg-white p-2.5 flex flex-col h-[280px] font-sans transition-all group/container rounded-xl">
       <h3 className="text-[14px] font-black text-slate-800 mb-3 tracking-tight h-[40px]">{title}</h3>
       
-      <div className="flex gap-2 mb-3 min-h-[120px]">
+      <div className="flex gap-2 mb-2 min-h-[108px]">
         <div 
-          className="w-[80px] aspect-square flex items-center justify-center p-1 cursor-pointer group shrink-0"
+          className="w-[70px] aspect-square flex items-center justify-center p-1 cursor-pointer group shrink-0"
           onClick={() => handleViewDetails(mainProduct)}
         >
           <OptimizedImage 
@@ -74,28 +74,28 @@ const ProductWidget = ({ title, products, onAddToCart, onViewDetails, isLoading 
           />
         </div>
         <div className="flex-1 flex flex-col pt-0.5 min-w-0">
-          <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">{mainProduct.brand}</span>
+          <span className="text-[7px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">{mainProduct.brand}</span>
           <h4 
-            className="text-[11px] font-bold text-[#0056A8] leading-[1.2] mb-1 cursor-pointer hover:underline overflow-hidden text-ellipsis"
+            className="text-[10px] font-bold text-[#0056A8] leading-[1.2] mb-0.5 cursor-pointer hover:underline overflow-hidden text-ellipsis"
             style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
             onClick={() => handleViewDetails(mainProduct)}
             title={cleanName}
           >
             {cleanName}
           </h4>
-          <span className="text-sm font-black text-slate-900 mb-2 whitespace-nowrap">
+          <span className="text-[13px] font-black text-slate-900 mb-1.5 whitespace-nowrap">
             {mainProduct.price.toLocaleString()} đ / cái
           </span>
           <button 
             onClick={() => onAddToCart(mainProduct, 1)}
-            className="px-3 py-1 bg-brand-primary border-brand-primary text-brand-secondary hover:bg-brand-primary/90 text-[10px] font-bold rounded transiton-all w-fit"
+            className="px-3 py-1 bg-brand-primary border-brand-primary text-brand-secondary hover:bg-brand-primary/90 text-[9px] font-bold rounded transiton-all w-fit"
           >
             Thêm vào giỏ
           </button>
         </div>
       </div>
 
-      <div className="mt-auto pt-4 border-t border-slate-100 flex items-center gap-2">
+      <div className="mt-auto pt-2 border-t border-slate-100 flex items-center gap-1.5">
         <button 
           onClick={() => scroll('left')}
           className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-brand-secondary shrink-0"
@@ -197,15 +197,16 @@ export default function RecommendationsGrid({ products, onAddToCart, onViewDetai
   };
 
   return (
-    <section className="bg-white pt-[29px] pb-4 font-sans">
+    <section className="bg-white pt-4 pb-3 font-sans">
+
       <div 
-        className="max-w-[1760px] mx-auto px-2 lg:px-4 relative"
+        className="max-w-[1760px] mx-auto px-4 lg:px-6 relative"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
         <div 
           ref={scrollRef}
-          className="flex items-stretch gap-2 lg:gap-4 bg-[#1a3646] p-4 lg:p-8 rounded-xl lg:rounded-2xl overflow-hidden"
+          className="flex items-stretch gap-2 lg:gap-3 bg-[#163F78] p-3 lg:p-4 rounded-md overflow-hidden"
         >
           {allWidgets.map((widget, i) => (
             <div key={i} className="min-w-full md:min-w-[50%] lg:min-w-[calc(25%-12px)] flex-shrink-0 h-full">

@@ -38,6 +38,16 @@ const formatTimestamp = (iso: string): string => {
   return `${hh}:${mm} • ${dd}/${MM}/${yyyy}`;
 };
 
+/** Sinh mock timestamp cho mỗi bước dựa trên thời gian hiện tại */
+const generateMockTimestamps = (currentStepIndex: number): string[] => {
+  const now = Date.now();
+  return Array.from({ length: 5 }, (_, i) => {
+    // Mỗi bước cách nhau 5-30 phút, càng về sau càng xa
+    const offsetMinutes = (currentStepIndex - i) * (5 + i * 5);
+    return new Date(now - offsetMinutes * 60 * 1000).toISOString();
+  });
+};
+
 export const OrderStatusBar: React.FC<OrderStatusBarProps> = ({
   status,
   size = 'md',
@@ -47,6 +57,10 @@ export const OrderStatusBar: React.FC<OrderStatusBarProps> = ({
 }) => {
   const currentStepIndex = STATUS_ORDER_STEP_INDEX[status] ?? 0;
   const isCancelled = status === 'cancelled';
+
+  // Dùng timestamps thực nếu có, không thì sinh mock
+  const effectiveTimestamps =
+    timestamps && timestamps.length > 0 ? timestamps : generateMockTimestamps(currentStepIndex);
 
   const circleHeight = size === 'sm' ? 40 : 48;
   const circleWidth = size === 'sm' ? 40 : 48;
@@ -73,32 +87,81 @@ export const OrderStatusBar: React.FC<OrderStatusBarProps> = ({
   return (
     <div className="w-full relative px-2">
       {/* Full-width progress line track - sits behind circles */}
-      <div className="absolute left-0 right-0 z-[1]" style={{ top: lineTop, height: lineHeight }}>
+      <div className="absolute z-[1]" style={{ top: lineTop, height: lineHeight, left: 8, right: 8 }}>
+        {/* Running label above the active segment */}
+        {(() => {
+          const isCompletedOrder = status === 'completed';
+          if (isCompletedOrder) return null;
+
+          const runningLabel =
+            status === 'shipping'
+              ? 'Đang giao hàng'
+              : status === 'processing'
+                ? 'Đang xử lý'
+                : 'Đang xác nhận';
+
+          const segmentIndex = currentStepIndex;
+          const leftPercent = segmentIndex * (100 / (TIMELINE_STEPS.length - 1));
+          const segmentWidth = 100 / (TIMELINE_STEPS.length - 1);
+          const centerShift = -(segmentWidth * 0.05);
+
+          return (
+            <div
+              className="absolute text-[10px] font-semibold whitespace-nowrap"
+              style={{
+                left: `calc(${leftPercent}% + ${segmentWidth / 2}% + ${centerShift}%)`,
+                top: '-24px',
+                transform: 'translateX(-50%)',
+                color: accentColor,
+                textShadow: '0 0 6px rgba(255,255,255,0.9)',
+                zIndex: 20,
+              }}
+            >
+              {runningLabel}
+            </div>
+          );
+        })()}
+
         {/* Background gray line */}
         <div className="absolute inset-0 bg-slate-200 rounded-full" />
 
         {/* Completed + running segments */}
         {TIMELINE_STEPS.slice(0, -1).map((_, index) => {
           const isCompleted = index < currentStepIndex;
-          const isRunning = index === currentStepIndex - 1;
+          const isRunning = index === currentStepIndex;
           const isCompletedOrder = status === 'completed';
 
           if (!isCompleted && !isRunning) return null;
 
+          const isFirst = index === 0;
+          const isLast = index === TIMELINE_STEPS.length - 2;
+          const segmentPct = 100 / (TIMELINE_STEPS.length - 1);
+
           return (
             <div
               key={`segment-${index}`}
-              className="absolute top-0 h-full rounded-full overflow-hidden"
+              className="absolute top-0 h-full overflow-hidden"
               style={{
-                left: `${index * (100 / (TIMELINE_STEPS.length - 1))}%`,
-                width: `${100 / (TIMELINE_STEPS.length - 1)}%`,
+                left: `${index * segmentPct}%`,
+                width: `${segmentPct}%`,
+                borderRadius: isFirst
+                  ? '4px 0 0 4px'
+                  : isLast
+                    ? '0 4px 4px 0'
+                    : '4px',
+                clipPath: isFirst
+                  ? 'inset(0 0 0 24px)'
+                  : isLast
+                    ? 'inset(0 24px 0 0)'
+                    : undefined,
               }}
             >
               <div
-                className="absolute inset-0 rounded-full"
+                className="absolute inset-0"
                 style={{
                   backgroundColor: accentColor,
                   boxShadow: `0 0 8px ${accentColor}`,
+                  borderRadius: 'inherit',
                 }}
               />
 
@@ -134,7 +197,7 @@ export const OrderStatusBar: React.FC<OrderStatusBarProps> = ({
           const isCompleted = index < currentStepIndex;
           const isActive = index === currentStepIndex;
           const { Icon } = step;
-          const timestamp = timestamps[index];
+          const timestamp = effectiveTimestamps[index];
 
           return (
             <div
@@ -188,11 +251,13 @@ export const OrderStatusBar: React.FC<OrderStatusBarProps> = ({
                   className="text-[11px] leading-3 mt-1.5 text-center font-mono"
                   style={{ color: '#94A3B8' }}
                 >
-                  {isActive
-                    ? 'Đang thực hiện'
-                    : timestamp
-                      ? formatTimestamp(timestamp)
-                      : '--'}
+                  {index === TIMELINE_STEPS.length - 1 && status === 'completed'
+                    ? 'Đã giao thành công'
+                    : isActive
+                      ? '--'
+                      : isCompleted && timestamp
+                        ? formatTimestamp(timestamp)
+                        : '--'}
                 </p>
               </div>
             </div>

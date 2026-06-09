@@ -47,7 +47,7 @@ import { toSlug, generateCategoryUrl } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
 import { Product } from "../types";
 
-const mecsuLogo = "/assets/mecsu.png";
+const mecsuLogo = "/src/assets/images/mecsu-sologan.png";
 
 const ICON_MAP: Record<string, any> = {
   Blocks,
@@ -135,7 +135,7 @@ export default function Header({
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [orderJustCompleted, onOrderAnimationComplete]);
+  }, [orderJustCompleted]);
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = scrollY.getPrevious() ?? 0;
@@ -168,33 +168,18 @@ export default function Header({
       {/* 2. Main Premium Header */}
       <div className={`border-b border-slate-200 transition-all duration-300 ${isScrolled ? "bg-white/95 backdrop-blur-md shadow-sm" : "bg-white"}`}>
         <div className="max-w-[1600px] mx-auto px-6 lg:px-12 h-20 flex items-center gap-12 relative">
-          {/* Modern Logo Area */}
+          {/* Logo */}
           <div
             onClick={onLogoClick}
-            className="flex items-center gap-4 cursor-pointer group shrink-0"
+            className="flex items-center cursor-pointer shrink-0"
           >
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform overflow-hidden">
-              <img src={mecsuLogo} alt="MECSU Logo" className="w-full h-full object-cover" />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-baseline leading-none">
-                <span className="text-2xl font-black text-[#24465B] tracking-tighter uppercase italic">
-                  MECSU
-                </span>
-                <span className="text-2xl font-black text-brand-primary tracking-tighter">
-                  .VN
-                </span>
-              </div>
-              <span className="text-[10px] font-bold text-slate-400 capitalize tracking-[0.2em] mt-1">
-                Enterprise industrial
-              </span>
-            </div>
+            <img src={mecsuLogo} alt="MECSU Logo" className="h-16 w-auto object-contain" />
           </div>
 
           {/* Enhanced Categories Button */}
           <button
             onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-            className="hidden lg:flex items-center gap-4 px-6 h-12 bg-[#24465B] text-white rounded-xl font-bold text-[13px] tracking-widest hover:bg-slate-800 transition-all group shrink-0 shadow-md relative overflow-hidden"
+            className="hidden lg:flex items-center gap-4 px-6 h-12 bg-[#163F78] text-white rounded-md font-bold text-[13px] tracking-widest hover:brightness-110 transition-all group shrink-0 shadow-md relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             <Menu
@@ -358,7 +343,6 @@ export default function Header({
                   <AnimatePresence>
                     {cartCount > 0 && (
                       <motion.div
-                        key={cartCount}
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         exit={{ scale: 0 }}
@@ -465,7 +449,7 @@ export default function Header({
               initial={{ opacity: 0, y: -10, x: "-50%" }}
               animate={{ opacity: 1, y: 0, x: "-50%" }}
               exit={{ opacity: 0, y: -10, x: "-50%" }}
-              className="fixed left-1/2 top-[84px] w-[calc(100%-2rem)] max-w-7xl bg-white rounded-2xl border border-slate-200 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] z-[196] h-[520px] flex overflow-hidden"
+              className="fixed left-1/2 top-[84px] w-[calc(100%-2rem)] max-w-7xl bg-white rounded-md border border-slate-200 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] z-[196] h-[520px] flex overflow-hidden"
             >
               <div className="w-[280px] bg-slate-50 border-r border-slate-200 py-6 overflow-y-auto no-scrollbar">
                 {HEADER_CATEGORIES.map((cat, idx) => {
@@ -511,7 +495,7 @@ export default function Header({
 
               <div className="flex-1 p-10 overflow-y-auto">
                 {hoveredCategoryIdx !== null && (
-                  <div className="grid grid-cols-3 gap-x-8 gap-y-8">
+                  <div className="grid grid-cols-4 gap-x-8 gap-y-8">
                     {HEADER_CATEGORIES[hoveredCategoryIdx].subcategories.map(
                       (sub, i) => (
                         <button

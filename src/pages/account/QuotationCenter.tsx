@@ -90,7 +90,7 @@ const QuotationCard: React.FC<QuotationCardProps> = ({ quotation, onViewDetails 
 
   const productSummary = quotation.items.slice(0, 2).map((item) => item.name).join(', ');
   const moreProducts = quotation.items.length > 2 ? `...+${quotation.items.length - 2} sản phẩm` : '';
-  const totalQuantity = quotation.items.reduce((sum, item) => sum + item.quantity, 0);
+
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN').format(price);
@@ -104,42 +104,22 @@ const QuotationCard: React.FC<QuotationCardProps> = ({ quotation, onViewDetails 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 lg:gap-4">
         {/* Left Content */}
         <div className="space-y-3">
-          {/* Header: Code + Date */}
+          {/* Header: Code */}
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-sm font-semibold text-[#163F78]">{quotation.code}</span>
-            <span className="text-xs text-slate-400">•</span>
-            <span className="text-xs text-slate-500 flex items-center gap-1">
-              <Calendar size={12} />
-              {quotation.requestDate}
-            </span>
-          </div>
-
-          {/* Product Summary */}
-          <div>
-            <div className="flex items-start gap-2">
-              <Package size={16} className="text-slate-400 mt-0.5 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-800 line-clamp-2">
-                  {productSummary}
-                  {moreProducts && <span className="text-slate-400 ml-1">{moreProducts}</span>}
-                </p>
-              </div>
-            </div>
           </div>
 
           {/* Meta Info */}
-          <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
-            <span>{quotation.items.length} sản phẩm</span>
-            <span className="w-1 h-1 rounded-full bg-slate-300" />
-            <span>{totalQuantity} số lượng</span>
+          <div className="flex flex-col gap-2 text-xs text-slate-500">
+            <span className="flex items-center gap-1">
+              <Calendar size={12} />
+              {quotation.requestDate}
+            </span>
             {quotation.expiryDate && (
-              <>
-                <span className="w-1 h-1 rounded-full bg-slate-300" />
-                <span className="flex items-center gap-1">
-                  <Clock size={12} />
-                  Hạn: {quotation.expiryDate}
-                </span>
-              </>
+              <span className="flex items-center gap-1">
+                <Clock size={12} />
+                Hạn: {quotation.expiryDate}
+              </span>
             )}
           </div>
 

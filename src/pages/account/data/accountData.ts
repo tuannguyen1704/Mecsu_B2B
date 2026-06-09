@@ -8,6 +8,7 @@ export interface AccountStats {
   completedOrders: number;
   wishlistItems: number;
   quotes: number;
+  totalOrderValue: number;
 }
 
 export const accountStats: AccountStats = {
@@ -15,6 +16,7 @@ export const accountStats: AccountStats = {
   completedOrders: 47,
   wishlistItems: 12,
   quotes: 2,
+  totalOrderValue: 128500000,
 };
 
 // Mock addresses for demo
@@ -233,6 +235,15 @@ export const orderStatusConfig = {
 // Helper function to format price
 export const formatPrice = (price: number): string => {
   return new Intl.NumberFormat('vi-VN').format(price) + ' đ';
+};
+
+// Helper function to format compact price (e.g. 8.610.000 → "8,6tr")
+export const formatCompactPrice = (price: number): string => {
+  const millions = price / 1_000_000;
+  return millions.toLocaleString('vi-VN', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }) + 'tr';
 };
 
 // Helper function to format date

@@ -2,23 +2,17 @@ import React, { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
-  Calendar,
   Check,
   CheckCircle2,
-  ChevronRight,
   CircleAlert,
   Clock3,
   Download,
   FileText,
-  Mail,
   MessageCircle,
   Package,
-  Phone,
   Printer,
   RotateCcw,
-  Send,
   ShoppingBag,
-  User,
   X,
 } from 'lucide-react';
 import { AccountLayout } from './components/AccountLayout';
@@ -31,6 +25,7 @@ import {
 import { mockQuotations } from './quotationData';
 import { cn } from '../../lib/utils';
 import { Toast } from '../../components/ui/Toast';
+import { Product } from '../../types/types';
 
 const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(price);
 
@@ -47,7 +42,7 @@ const statusStyles: Record<QuotationStatus, string> = {
 
 const statusLabels: Record<QuotationStatus, string> = {
   pending: 'Đang xử lý',
-  processing: 'Đang xử lý',
+  processing: 'Chờ phản hồi',
   sent: 'Đã phản hồi',
   accepted: 'Đã chấp nhận',
   expired: 'Hết hạn',
@@ -79,7 +74,7 @@ function getTimelineDates(quotation: Quotation) {
     0: `${quotation.requestDate} • 08:30`,
     1: `${quotation.requestDate} • 10:15`,
     2: quotation.quotationDate ? `${quotation.quotationDate} • 14:30` : '',
-    3: quotation.status === 'accepted' ? `${quotation.quotationDate || quotation.requestDate} • 16:00` : '',
+    3: quotation.status === 'completed' ? `${quotation.quotationDate || quotation.requestDate} • 17:00` : '',
   } as Record<number, string>;
 }
 
@@ -121,6 +116,25 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   );
 };
 
+function toProduct(quotationItem: QuotationItem): Product {
+  return {
+    id: quotationItem.id,
+    sku: quotationItem.sku,
+    name: quotationItem.name,
+    slug: quotationItem.sku.toLowerCase().replace(/\s+/g, '-'),
+    category: 'Báo giá',
+    categorySlug: 'bao-gia',
+    brand: 'MECsu',
+    price: quotationItem.unitPrice,
+    tax: quotationItem.vat / quotationItem.lineTotal,
+    stock: 9999,
+    unit: quotationItem.unit,
+    delivery: 'Sẵn hàng',
+    image: 'https://placehold.co/200x200/f6f8fb/163F78?text=' + encodeURIComponent(quotationItem.name.slice(0, 10)),
+    tags: ['bao-gia'],
+  };
+}
+
 interface ModalShellProps {
   title: string;
   description: string;
@@ -155,7 +169,7 @@ const ModalShell: React.FC<ModalShellProps> = ({ title, description, onClose, ch
   );
 };
 
-export default function QuotationDetailPage() {
+export default function QuotationDetailPage({ onAddToCart }: { onAddToCart?: (product: Product, quantity: number) => void }) {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [quotation, setQuotation] = useState<Quotation>(
@@ -169,13 +183,18 @@ export default function QuotationDetailPage() {
   const timelineDates = useMemo(() => getTimelineDates(quotation), [quotation]);
   const currentTimelineIndex = quotationStatusTimelineIndex[quotation.status];
 
+  const handlePlaceOrder = () => {
+    quotation.items.forEach((item) => {
+      onAddToCart?.(toProduct(item), item.quantity);
+    });
+    navigate('/gio-hang');
+  };
+
   const infoItems = [
     { label: 'Mã báo giá', value: `#${quotation.code}` },
     { label: 'Ngày tạo', value: quotation.requestDate },
     { label: 'Ngày phản hồi', value: quotation.quotationDate || 'Đang cập nhật' },
     { label: 'Hiệu lực đến', value: quotation.expiryDate || 'Đang cập nhật' },
-    { label: 'Người yêu cầu', value: quotation.requestName || 'Khách hàng MECsu' },
-    { label: 'Trạng thái', value: statusLabels[quotation.status], isBadge: true },
   ];
 
   const handleDownloadPdf = () => {
@@ -265,101 +284,12 @@ export default function QuotationDetailPage() {
     }
   };
 
-  const renderSideActions = () => {
-    if (quotation.status === 'sent') {
-      return (
-        <div className="space-y-3 border-t border-[#E5EAF2] pt-5">
-          <ActionButton
-            variant="accent"
-            className="w-full"
-            onClick={() => setIsAcceptModalOpen(true)}
-            icon={<CheckCircle2 size={16} />}
-          >
-            Chấp nhận báo giá
-          </ActionButton>
-          <ActionButton
-            variant="secondary"
-            className="w-full"
-            onClick={handleDownloadPdf}
-            icon={<Download size={16} />}
-          >
-            Tải PDF
-          </ActionButton>
-          <ActionButton
-            variant="secondary"
-            className="w-full"
-            onClick={() => setIsRevisionModalOpen(true)}
-            icon={<FileText size={16} />}
-          >
-            Gửi yêu cầu chỉnh sửa
-          </ActionButton>
-        </div>
-      );
-    }
-
-    if (quotation.status === 'pending' || quotation.status === 'processing') {
-      return (
-        <div className="space-y-3 border-t border-[#E5EAF2] pt-5">
-          <ActionButton
-            variant="secondary"
-            className="w-full"
-            onClick={() => setToast({ show: true, message: 'Đã ghi nhận yêu cầu hủy báo giá', type: 'success' })}
-            icon={<CircleAlert size={16} />}
-          >
-            Hủy yêu cầu
-          </ActionButton>
-          <ActionButton
-            variant="primary"
-            className="w-full"
-            onClick={handleSupport}
-            icon={<MessageCircle size={16} />}
-          >
-            Nhắn hỗ trợ
-          </ActionButton>
-        </div>
-      );
-    }
-
-    if (quotation.status === 'expired') {
-      return (
-        <div className="space-y-3 border-t border-[#E5EAF2] pt-5">
-          <ActionButton
-            variant="secondary"
-            className="w-full"
-            onClick={() => setToast({ show: true, message: 'Đã gửi lại yêu cầu báo giá', type: 'success' })}
-            icon={<RotateCcw size={16} />}
-          >
-            Gửi lại yêu cầu
-          </ActionButton>
-          <ActionButton
-            variant="primary"
-            className="w-full"
-            onClick={() => navigate('/tai-khoan/bao-gia')}
-            icon={<ShoppingBag size={16} />}
-          >
-            Tạo báo giá mới
-          </ActionButton>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-3 border-t border-[#E5EAF2] pt-5">
-        <ActionButton variant="secondary" className="w-full" onClick={handleDownloadPdf} icon={<Printer size={16} />}>
-          Tải PDF báo giá
-        </ActionButton>
-        <ActionButton variant="primary" className="w-full" onClick={handleSupport} icon={<MessageCircle size={16} />}>
-          Nhắn hỗ trợ
-        </ActionButton>
-      </div>
-    );
-  };
-
   return (
     <AccountLayout>
-      <div className="space-y-3 bg-[#F6F8FB] pb-4">
-      <div className="flex flex-col gap-4 rounded-[20px] border border-[#E5EAF2] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-3">
+      <div className="max-w-screen-xl mx-auto space-y-3 bg-[#F6F8FB] pb-4 px-0 xl:px-4">
+      <div className="flex flex-col gap-4 rounded-[20px] border border-[#E5EAF2] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col gap-2">
             <Link
               to="/tai-khoan/bao-gia"
               className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition-colors hover:text-[#163F78]"
@@ -367,82 +297,116 @@ export default function QuotationDetailPage() {
               <ArrowLeft size={16} />
               <span>Quay lại</span>
             </Link>
-
-            <div>
+            <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-bold text-slate-900 lg:text-3xl">Chi tiết báo giá</h1>
-              <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                <span className="font-semibold text-[#163F78]">#{quotation.code}</span>
-                <span className="h-1 w-1 rounded-full bg-slate-300" />
-                <span className="inline-flex items-center gap-1.5">
-                  <Calendar size={14} />
-                  Ngày tạo {quotation.requestDate}
+              <span
+                className={cn(
+                  'inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold',
+                  statusStyles[quotation.status],
+                )}
+              >
+                {statusLabels[quotation.status]}
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3">{renderHeaderActions()}</div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_340px] xl:items-stretch">
+          <section className={cn(cardClass, 'p-5 flex flex-col')}>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-900">Thông tin báo giá</h2>
+              <span className="text-xs font-medium uppercase tracking-[0.14em] text-[#3678ba]">Quotation overview</span>
+            </div>
+
+            <div className="mt-auto grid grid-cols-2 gap-3">
+              {infoItems.map((item) => (
+                <div key={item.label} className="rounded-2xl border border-[#E5EAF2] bg-[#F8FAFC] px-4 py-3">
+                  <p className="text-xs font-medium uppercase tracking-[0.08em] text-slate-400">{item.label}</p>
+                  {item.isBadge ? (
+                    <span
+                      className={cn(
+                        'mt-2 inline-flex rounded-lg px-3 py-1.5 text-sm font-semibold',
+                        statusStyles[quotation.status],
+                      )}
+                    >
+                      {item.value}
+                    </span>
+                  ) : (
+                    <p className="mt-2 text-sm font-semibold text-slate-800">{item.value}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className={cn(cardClass, 'p-5')}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-900">Tiến trình báo giá</h2>
+              <Clock3 size={18} className="text-[#3678ba]" />
+            </div>
+
+            <div className="mt-4 space-y-0">
+              {quotationTimelineSteps.map((step, index) => {
+                const isCompleted = index <= currentTimelineIndex;
+                const isLast = index === 3;
+                return (
+                  <div key={step} className="relative flex items-start gap-3">
+                    {!isLast && (
+                      <div
+                        className={cn(
+                          'absolute left-[15px] top-8 h-[calc(100%-32px)] w-[2px]',
+                          isCompleted ? 'bg-[#163F78]' : 'bg-[#E5EAF2]',
+                        )}
+                      />
+                    )}
+                    <div
+                      className={cn(
+                        'relative z-10 flex h-8 w-8 items-center justify-center rounded-full border text-xs font-bold',
+                        isCompleted
+                          ? 'border-[#163F78] bg-[#163F78] text-white'
+                          : 'border-[#CBD5E1] bg-white text-slate-400',
+                      )}
+                    >
+                      {isCompleted ? <Check size={14} /> : index + 1}
+                    </div>
+                    <div className="min-w-0 pt-0.5">
+                      <p className={cn('text-sm font-semibold', isCompleted ? 'text-slate-900' : 'text-slate-400')}>
+                        {step.label}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {isCompleted && timelineDates[index]
+                          ? timelineDates[index]
+                          : 'Đang chờ cập nhật'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+
+        <section className={cn(cardClass, 'overflow-hidden')}>
+          <div className="border-b border-[#E5EAF2] px-6 py-5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">Sản phẩm trong báo giá</h2>
+                  <p className="mt-1 text-sm text-slate-500">Bảng giá chi tiết theo từng mã hàng và tình trạng cung ứng.</p>
+                </div>
+                <span className="inline-flex items-center gap-2 rounded-full bg-[#E8F1FB] px-3 py-1 text-sm font-semibold text-[#163F78]">
+                  <Package size={14} />
+                  {quotation.items.length} sản phẩm
                 </span>
               </div>
             </div>
-          </div>
 
-          <div className="flex flex-col items-stretch gap-3 lg:items-end">
-            <span
-              className={cn(
-                'inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold',
-                statusStyles[quotation.status],
-              )}
-            >
-              {statusLabels[quotation.status]}
-            </span>
-            <div className="flex flex-wrap gap-3">{renderHeaderActions()}</div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="space-y-4">
-            <section className={cn(cardClass, 'p-5')}>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-slate-900">Thông tin báo giá</h2>
-                <span className="text-xs font-medium uppercase tracking-[0.14em] text-[#3678ba]">Quotation overview</span>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {infoItems.map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-[#E5EAF2] bg-[#F8FAFC] px-4 py-3">
-                    <p className="text-xs font-medium uppercase tracking-[0.08em] text-slate-400">{item.label}</p>
-                    {item.isBadge ? (
-                      <span
-                        className={cn(
-                          'mt-2 inline-flex rounded-lg px-3 py-1.5 text-sm font-semibold',
-                          statusStyles[quotation.status],
-                        )}
-                      >
-                        {item.value}
-                      </span>
-                    ) : (
-                      <p className="mt-2 text-sm font-semibold text-slate-800">{item.value}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className={cn(cardClass, 'overflow-hidden')}>
-              <div className="border-b border-[#E5EAF2] px-6 py-5">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-900">Sản phẩm trong báo giá</h2>
-                    <p className="mt-1 text-sm text-slate-500">Bảng giá chi tiết theo từng mã hàng và tình trạng cung ứng.</p>
-                  </div>
-                  <span className="inline-flex items-center gap-2 rounded-full bg-[#E8F1FB] px-3 py-1 text-sm font-semibold text-[#163F78]">
-                    <Package size={14} />
-                    {quotation.items.length} sản phẩm
-                  </span>
-                </div>
-              </div>
-
-              <div className="hidden overflow-x-auto lg:block">
+              <div className="hidden xl:block">
                 <table className="min-w-full border-separate border-spacing-0">
                   <thead>
                     <tr className="bg-[#F8FAFC] text-left text-xs uppercase tracking-[0.08em] text-slate-500">
-                      <th className="px-6 py-4 font-semibold">Sản phẩm</th>
                       <th className="px-6 py-4 font-semibold">Mã hàng</th>
+                      <th className="px-6 py-4 font-semibold">Sản phẩm</th>
                       <th className="px-6 py-4 font-semibold text-right">Số lượng</th>
                       <th className="px-6 py-4 font-semibold">Đơn vị</th>
                       <th className="px-6 py-4 font-semibold text-right">Đơn giá</th>
@@ -455,6 +419,7 @@ export default function QuotationDetailPage() {
                       const stock = getStockBadge(index);
                       return (
                         <tr key={item.id} className="transition-colors hover:bg-[#F8FAFC]">
+                          <td className="border-t border-[#E5EAF2] px-6 py-5 text-sm font-medium text-slate-700">{item.sku}</td>
                           <td className="border-t border-[#E5EAF2] px-6 py-5 align-top">
                             <div className="flex items-start gap-3">
                               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F6F8FB] text-[#163F78]">
@@ -466,7 +431,6 @@ export default function QuotationDetailPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="border-t border-[#E5EAF2] px-6 py-5 text-sm font-medium text-slate-700">{item.sku}</td>
                           <td className="border-t border-[#E5EAF2] px-6 py-5 text-right text-sm font-semibold text-slate-900">{item.quantity}</td>
                           <td className="border-t border-[#E5EAF2] px-6 py-5 text-sm text-slate-700">{item.unit}</td>
                           <td className="border-t border-[#E5EAF2] px-6 py-5 text-right text-sm font-medium text-slate-700">{formatPrice(item.unitPrice)}đ</td>
@@ -495,7 +459,7 @@ export default function QuotationDetailPage() {
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-slate-900">{item.name}</p>
-                            <p className="mt-1 text-xs text-slate-500">SKU: {item.sku}</p>
+                            <p className="mt-1 text-xs text-slate-500">{item.sku}</p>
                           </div>
                         </div>
                         <span className={cn('inline-flex rounded-lg px-2.5 py-1 text-xs font-semibold', stock.className)}>
@@ -527,151 +491,62 @@ export default function QuotationDetailPage() {
               </div>
 
               <div className="border-t border-[#E5EAF2] bg-[#F8FAFC] px-6 py-5">
-                <div className="ml-auto max-w-md space-y-3">
-                  <div className="flex items-center justify-between text-sm text-slate-600">
-                    <span>Tạm tính</span>
-                    <span className="font-semibold text-slate-900">{formatPrice(quotation.subtotal)}đ</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-slate-600">
-                    <span>VAT</span>
-                    <span className="font-semibold text-slate-900">{formatPrice(quotation.vatTotal)}đ</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-slate-600">
-                    <span>Phí vận chuyển</span>
-                    <span className="font-semibold text-slate-900">{quotation.shippingFee > 0 ? `${formatPrice(quotation.shippingFee)}đ` : 'Miễn phí'}</span>
-                  </div>
-                  <div className="border-t border-[#D9E2EC] pt-3">
-                    <div className="flex items-center justify-between">
+                {/* Row 1: Ghi chú yêu cầu (left) + Tổng cộng (right) */}
+                <div className="flex flex-col gap-5 sm:flex-row-reverse sm:items-start sm:justify-between mb-4">
+                  {/* Tổng cộng */}
+                  <div className="sm:w-1/2">
+                    <div className="flex items-center justify-between gap-4 mb-1">
                       <span className="text-base font-semibold text-slate-900">Tổng cộng</span>
                       <span className="text-2xl font-bold text-[#163F78]">{formatPrice(quotation.total)}đ</span>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className={cn(cardClass, 'p-6')}>
-              <h2 className="text-lg font-bold text-slate-900">Ghi chú yêu cầu</h2>
-              <div className="mt-4 rounded-2xl border border-dashed border-[#D9E2EC] bg-[#F8FAFC] p-5">
-                <p className="text-sm leading-7 text-slate-600">
-                  {quotation.generalNotes || 'Không có ghi chú.'}
-                </p>
-              </div>
-            </section>
-          </div>
-
-          <div className="space-y-4">
-            <section className={cn(cardClass, 'p-5')}>
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-slate-900">Tiến trình báo giá</h2>
-                <Clock3 size={18} className="text-[#3678ba]" />
-              </div>
-
-              <div className="mt-4 space-y-0">
-                {quotationTimelineSteps.slice(0, 4).map((step, index) => {
-                  const isCompleted = index <= currentTimelineIndex;
-                  const isLast = index === 3;
-                  const timelineLabel =
-                    index === 0
-                      ? 'Đã gửi yêu cầu'
-                      : index === 1
-                        ? 'MECsu đang xử lý'
-                        : index === 2
-                          ? 'Đã phản hồi báo giá'
-                          : 'Khách hàng xác nhận';
-
-                  return (
-                    <div key={step.id} className="relative flex gap-4 pb-6 last:pb-0">
-                      {!isLast && (
-                        <div
-                          className={cn(
-                            'absolute left-[15px] top-8 h-[calc(100%-0.5rem)] w-0.5',
-                            isCompleted ? 'bg-[#163F78]' : 'bg-[#CBD5E1]',
-                          )}
-                        />
-                      )}
-                      <div
-                        className={cn(
-                          'relative z-10 flex h-8 w-8 items-center justify-center rounded-full border text-xs font-bold',
-                          isCompleted
-                            ? 'border-[#163F78] bg-[#163F78] text-white'
-                            : 'border-[#CBD5E1] bg-white text-slate-400',
-                        )}
-                      >
-                        {isCompleted ? <Check size={14} /> : index + 1}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-sm text-slate-600">
+                        <span>Tạm tính</span>
+                        <span className="font-medium text-slate-900">{formatPrice(quotation.subtotal)}đ</span>
                       </div>
-                      <div className="min-w-0 pt-0.5">
-                        <p className={cn('text-sm font-semibold', isCompleted ? 'text-slate-900' : 'text-slate-400')}>
-                          {timelineLabel}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {isCompleted && timelineDates[index]
-                            ? timelineDates[index]
-                            : 'Đang chờ cập nhật'}
-                        </p>
+                      <div className="flex items-center justify-between text-sm text-slate-600">
+                        <span>VAT</span>
+                        <span className="font-medium text-slate-900">{formatPrice(quotation.vatTotal)}đ</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm text-slate-600">
+                        <span>Phí vận chuyển</span>
+                        <span className="font-medium text-slate-900">{quotation.shippingFee > 0 ? `${formatPrice(quotation.shippingFee)}đ` : 'Miễn phí'}</span>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </section>
+                  </div>
 
-            <section className={cn(cardClass, 'p-6')}>
-              <h2 className="text-lg font-bold text-slate-900">Nhân viên phụ trách</h2>
-              <div className="mt-5 flex items-start gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#E8F1FB] text-[#163F78]">
-                  <User size={24} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-base font-bold text-slate-900">{quotation.salesRep.name}</p>
-                  <p className="mt-1 text-sm text-slate-500">{quotation.salesRep.role || 'Sales Executive'}</p>
-                  <div className="mt-4 space-y-2 text-sm text-slate-600">
-                    <div className="flex items-center gap-2">
-                      <Phone size={15} className="text-[#3678ba]" />
-                      <span>{quotation.salesRep.phone || '0912 345 678'}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Mail size={15} className="text-[#3678ba]" />
-                      <span>{quotation.salesRep.email || 'sales@mecsu.vn'}</span>
-                    </div>
+                  {/* Ghi chú yêu cầu */}
+                  <div className="flex-1">
+                    <p className="text-xs font-medium uppercase tracking-[0.08em] text-slate-400 mb-2">Ghi chú yêu cầu</p>
+                    <textarea
+                      className="w-full resize-none rounded-xl border border-[#D9E2EC] bg-white px-4 py-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#163F78] focus:outline-none focus:ring-2 focus:ring-[#163F78]/20"
+                      rows={3}
+                      placeholder="Nhập ghi chú yêu cầu của bạn..."
+                      defaultValue={quotation.generalNotes || ''}
+                    />
                   </div>
                 </div>
-              </div>
 
-              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <ActionButton variant="primary" onClick={() => window.open(`tel:${quotation.salesRep.phone || '0912345678'}`)} icon={<Phone size={16} />}>
-                  Gọi ngay
-                </ActionButton>
-                <ActionButton variant="secondary" onClick={handleSupport} icon={<MessageCircle size={16} />}>
-                  Nhắn hỗ trợ
-                </ActionButton>
+                {/* Row 2: Buttons */}
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  {quotation.status === 'sent' && (
+                    <>
+                      <ActionButton variant="accent" onClick={handlePlaceOrder} icon={<CheckCircle2 size={16} />}>
+                        Đặt đơn hàng
+                      </ActionButton>
+                      <ActionButton variant="secondary" onClick={handleDownloadPdf} icon={<Download size={16} />}>
+                        Tải PDF
+                      </ActionButton>
+                    </>
+                  )}
+                  {quotation.status === 'expired' ? (
+                    <ActionButton variant="secondary" onClick={() => setToast({ show: true, message: 'Báo giá đã hết hạn. Vui lòng liên hệ MECsu để được tạo báo giá mới.', type: 'info' })} icon={<CircleAlert size={16} />}>
+                      Báo giá hết hạn
+                    </ActionButton>
+                  ) : null}
+                </div>
               </div>
             </section>
-
-            <section className={cn(cardClass, 'p-6')}>
-              <h2 className="text-lg font-bold text-slate-900">Thông tin thanh toán</h2>
-              <div className="mt-5 space-y-4">
-                <div className="rounded-2xl border border-[#E5EAF2] bg-[#F8FAFC] p-4">
-                  <p className="text-xs font-medium uppercase tracking-[0.08em] text-slate-400">Hình thức thanh toán</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-800">{quotation.total > 15000000 ? 'Công nợ' : 'Chuyển khoản'}</p>
-                </div>
-                <div className="rounded-2xl border border-[#E5EAF2] bg-[#F8FAFC] p-4">
-                  <p className="text-xs font-medium uppercase tracking-[0.08em] text-slate-400">Thời gian giao hàng dự kiến</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-800">3 - 5 ngày làm việc tại TP.HCM và khu vực lân cận</p>
-                </div>
-                <div className="rounded-2xl border border-[#E5EAF2] bg-[#F8FAFC] p-4">
-                  <p className="text-xs font-medium uppercase tracking-[0.08em] text-slate-400">Điều kiện bảo hành</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-800">Bảo hành theo tiêu chuẩn nhà sản xuất và chính sách MECsu</p>
-                </div>
-                <div className="rounded-2xl border border-[#E5EAF2] bg-[#F8FAFC] p-4">
-                  <p className="text-xs font-medium uppercase tracking-[0.08em] text-slate-400">Hiệu lực báo giá</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-800">Đến hết ngày {quotation.expiryDate || 'được cập nhật sau'}</p>
-                </div>
-              </div>
-
-              {renderSideActions()}
-            </section>
-          </div>
         </div>
 
         {isAcceptModalOpen && (
@@ -732,6 +607,7 @@ export default function QuotationDetailPage() {
 
         {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast((prev) => ({ ...prev, show: false }))} />}
       </div>
+      
     </AccountLayout>
   );
 }

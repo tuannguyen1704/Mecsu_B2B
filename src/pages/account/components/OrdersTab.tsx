@@ -94,7 +94,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
   return (
     <div className="space-y-3 w-full max-w-full">
       {/* Search & Filter */}
-      <div className="bg-white rounded-2xl border border-[#E5EAF2] p-3 lg:p-4">
+      <div className="bg-white rounded-md border border-[#E5EAF2] p-3 lg:p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search Input */}
           <div className="flex-1 min-w-0">
@@ -120,10 +120,10 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                 key={option.value}
                 onClick={() => handleFilterChange(option.value)}
                 className={cn(
-                  "px-4 py-2 h-10 rounded-xl text-sm font-medium transition-all whitespace-nowrap border",
+                  "px-4 py-2 h-10 rounded-md text-sm font-medium transition-all whitespace-nowrap border border-transparent",
                   activeFilter === option.value
-                    ? "bg-[#163F78] text-white border-[#D9E5F6]"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 border-[#D9E5F6]"
+                    ? "bg-[#163F78] text-white shadow-[0_0_0_3px_rgba(156,185,229,0.8)]"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 )}
               >
                 {option.label}
@@ -148,7 +148,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-[#E5EAF2] p-8 lg:p-12 text-center">
+        <div className="bg-white rounded-md border border-[#E5EAF2] p-8 lg:p-12 text-center">
           <Filter size={48} className="mx-auto text-slate-300 mb-4" />
           <h3 className="text-lg font-bold text-slate-700 mb-2">Không tìm thấy đơn hàng</h3>
           <p className="text-sm text-slate-500">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
@@ -157,7 +157,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex flex-wrap items-center justify-between gap-4 bg-white rounded-2xl border border-[#E5EAF2] px-4 lg:px-6 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 bg-white rounded-md border border-[#E5EAF2] px-4 lg:px-6 py-4">
           <p className="text-sm text-slate-500">
             Hiển thị {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredOrders.length)} của {filteredOrders.length} đơn hàng
           </p>

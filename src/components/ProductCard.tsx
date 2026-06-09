@@ -78,10 +78,11 @@ const ProductCard = React.memo(({ product, onAddToCart, onQuickView, onViewDetai
   }, [product, onViewDetails, navigate]);
 
   return (
-    <motion.div
-      layout
-      className="flex flex-col group bg-white border border-slate-200 hover:border-brand-primary transition-all duration-500 overflow-hidden h-full font-sans hover:-translate-y-[2px] hover:shadow-xl"
-    >
+    <>
+      <motion.div
+        layout
+        className="flex flex-col group bg-white border border-slate-200 hover:border-brand-primary transition-all duration-500 overflow-hidden h-full font-sans hover:-translate-y-[2px] hover:shadow-xl"
+      >
       <Link 
         to={`/san-pham/${productSlug}`}
         className="flex flex-col flex-1 cursor-pointer"
@@ -165,29 +166,30 @@ const ProductCard = React.memo(({ product, onAddToCart, onQuickView, onViewDetai
           {isOutOfStock ? 'Nhắc tôi sau' : 'Thêm giỏ hàng'}
         </button>
       </div>
-    </motion.div>
+      </motion.div>
 
-    {/* Notify When Available Modal */}
-    <NotifyWhenAvailableModal
-      isOpen={isNotifyModalOpen}
-      onClose={() => setIsNotifyModalOpen(false)}
-      product={product}
-      onSuccess={() => {
-        setToast({
-          message: 'Đã đăng ký nhắc hàng. Chúng tôi sẽ gửi email khi sản phẩm có hàng trở lại.',
-          type: 'success',
-        });
-      }}
-    />
-
-    {/* Toast Notification */}
-    {toast && (
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast(null)}
+      {/* Notify When Available Modal */}
+      <NotifyWhenAvailableModal
+        isOpen={isNotifyModalOpen}
+        onClose={() => setIsNotifyModalOpen(false)}
+        product={product}
+        onSuccess={() => {
+          setToast({
+            message: 'Đã đăng ký nhắc hàng. Chúng tôi sẽ gửi email khi sản phẩm có hàng trở lại.',
+            type: 'success',
+          });
+        }}
       />
-    )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </>
   );
 });
 

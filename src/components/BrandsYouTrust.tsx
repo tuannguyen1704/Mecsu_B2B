@@ -30,7 +30,7 @@ export default function BrandsYouTrust() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 mb-12">
-          <button className="bg-[#264553] text-white px-5 py-1.5 rounded-full text-[14px] font-bold">
+          <button className="bg-[#163F78] text-white px-5 py-1.5 rounded-md text-[14px] font-bold">
             Trusted brands
           </button>
           
@@ -42,7 +42,7 @@ export default function BrandsYouTrust() {
             {INDUSTRIES.map((industry) => (
               <button 
                 key={industry}
-                className="border border-slate-200 bg-white text-slate-700 hover:border-[#264553] hover:text-[#264553] px-5 py-2 rounded-full text-[14px] font-medium transition-all duration-200"
+                className="border border-slate-200 bg-white text-slate-700 hover:border-[#264553] hover:text-[#264553] px-5 py-2 rounded-md text-[14px] font-medium transition-all duration-200"
               >
                 {industry}
               </button>

@@ -1,4 +1,4 @@
-export type QuotationStatus = 'pending' | 'processing' | 'sent' | 'accepted' | 'expired';
+export type QuotationStatus = 'pending' | 'processing' | 'sent' | 'accepted' | 'expired' | 'completed';
 
 // Đơn vị sản phẩm
 export type ProductUnit = 'cái' | 'bộ' | 'hộp' | 'mét' | 'kg';
@@ -103,11 +103,10 @@ export const quotationStatusConfig: Record<
 };
 
 export const quotationTimelineSteps = [
-  { id: 0, label: 'Yêu cầu báo giá', iconKey: 'clipboard-list' },
+  { id: 0, label: 'Đã gửi yêu cầu', iconKey: 'clipboard-list' },
   { id: 1, label: 'Đang xử lý', iconKey: 'settings' },
-  { id: 2, label: 'Đã gửi báo giá', iconKey: 'send' },
-  { id: 3, label: 'Khách xác nhận', iconKey: 'user-check' },
-  { id: 4, label: 'Tạo đơn hàng', iconKey: 'check-circle-2' },
+  { id: 2, label: 'Chờ khách phản hồi', iconKey: 'send' },
+  { id: 3, label: 'Hoàn tất', iconKey: 'check-circle-2' },
 ] as const;
 
 export const quotationStatusTimelineIndex: Record<QuotationStatus, number> = {
@@ -115,5 +114,6 @@ export const quotationStatusTimelineIndex: Record<QuotationStatus, number> = {
   processing: 1,
   sent: 2,
   accepted: 3,
-  expired: 4,
+  expired: 3,
+  completed: 3,
 };

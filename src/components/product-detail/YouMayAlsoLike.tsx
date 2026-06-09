@@ -1,136 +1,88 @@
 import React, { useState } from "react";
-import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import { useSupabaseImages } from "../../hooks/useSupabaseImages";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Product } from "../../types";
+import ProductGridCard from "../ProductGridCard";
 
-interface ProductCardProps {
-  brand: string;
-  name: string;
-  price: string;
-  image: string | null;
+interface YouMayAlsoLikeProps {
+  currentProduct?: Product;
+  onAddToCart?: (product: Product, quantity: number) => void;
 }
 
-const ProductCard = ({ brand, name, price, image }: ProductCardProps) => (
-  <div className="flex-none w-[200px] bg-white p-4 border border-slate-200 rounded-sm shadow-sm hover:shadow-md transition-shadow group relative">
-    <button className="absolute top-2 right-2 text-slate-400 hover:text-red-500 transition-colors">
-      <Heart size={20} />
-    </button>
-    <div className="aspect-square mb-3 overflow-hidden">
-      {image ? (
-        <img
-          src={image}
-          alt={name}
-          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-        />
-      ) : (
-        <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-300">
-          No Image
-        </div>
-      )}
-    </div>
-    <div className="text-[12px] font-bold text-slate-600 uppercase mb-1">
-      {brand}
-    </div>
-    <h4 className="text-[14px] font-medium text-[#007185] hover:underline cursor-pointer line-clamp-3 mb-4 h-[60px]">
-      {name}
-    </h4>
-    <div className="text-[18px] font-bold text-[#0F1111] mb-4">{price}</div>
-    <button className="w-full py-2 bg-[#FFD814] hover:bg-[#F7CA00] border border-[#FCD200] text-[#0F1111] font-medium rounded-full shadow-sm transition-colors text-[14px]">
-      Thêm vào giỏ
-    </button>
-  </div>
-);
-
-const CATEGORIES = [
-  "Impact Socket Adapters",
-  "Screwdriver Bits and Nutsetters",
-  "Socket Adapters",
-];
-
-export default function YouMayAlsoLike() {
-  const { getRandomImage } = useSupabaseImages();
-  const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = 3;
-
-  const products = [
-    {
-      brand: "MILWAUKEE TOOL",
-      name: "SHOCKWAVE Impact Hex Shank Socket Adapter Set, 1/4 in Drive, 3-Piece",
-      price: "270.000đ / cái",
-      image: getRandomImage("milwaukee_set"),
-    },
-    {
-      brand: "MILWAUKEE TOOL",
-      name: "SHOCKWAVE 1/4 in. Hex to 1/2 in. Square Socket Adapter",
-      price: "150.000đ / cái",
-      image: getRandomImage("milwaukee_adapter_1"),
-    },
-    {
-      brand: "MILWAUKEE TOOL",
-      name: 'SHOCKWAVE 1/4" HEX SHANK TO 1/4" SOCKET Adapter',
-      price: "115.000đ / cái",
-      image: getRandomImage("milwaukee_adapter_2"),
-    },
-    {
-      brand: "DEWALT",
-      name: '3/8" Socket Adapter, Rapid Load Quick Change Adapter',
-      price: "89.000đ / cái",
-      image: getRandomImage("dewalt_adapter"),
-    },
-    {
-      brand: "MILWAUKEE TOOL",
-      name: "Impact Duty 3/8 in x 2-9/16 in Magnetic Nut Driver",
-      price: "99.000đ / cái",
-      image: getRandomImage("milwaukee_driver"),
-    },
-    {
-      brand: "MILWAUKEE TOOL",
-      name: "Shockwave 1/4 to 1/2 Socket Adapter-BK10",
-      price: "95.000đ / cái",
-      image: getRandomImage("milwaukee_adapter_3"),
-    },
+// Generate compatible accessory products as proper Product objects
+const generateAccessoryProducts = (): Product[] => {
+  const brands = ["MILWAUKEE TOOL", "DEWALT", "MAKITA", "Bosch", "Irwin", "Stanley"];
+  const names = [
+    "SHOCKWAVE Impact Hex Shank Socket Adapter Set, 1/4 in Drive, 3-Piece",
+    "SHOCKWAVE 1/4 in. Hex to 1/2 in. Square Socket Adapter",
+    'SHOCKWAVE 1/4" HEX SHANK TO 1/4" SOCKET Adapter',
+    '3/8" Socket Adapter, Rapid Load Quick Change Adapter',
+    "Impact Duty 3/8 in x 2-9/16 in Magnetic Nut Driver",
+    "Shockwave 1/4 to 1/2 Socket Adapter-BK10",
+    "Impact Duty 1/2 in Drive x 3 in Extension Bar",
+    '3/8" Drive Deep Socket, 10mm, Chrome Vanadium',
+    "SHOCKWAVE Magnetic Bit Tip 2-Pack, 1 in",
   ];
 
+  return names.map((name, i) => ({
+    id: `acc-${i}`,
+    sku: `SKU-ACC-${1000 + i}`,
+    name,
+    slug: `shockwave-accessory-${i}`,
+    category: "Phụ kiện công cụ",
+    categorySlug: "phu-kien-cong-cu",
+    brand: brands[i % brands.length],
+    price: 89000 + Math.floor(Math.random() * 200000),
+    originalPrice: undefined,
+    tax: 10,
+    stock: Math.floor(Math.random() * 50) + 1,
+    unit: "Bộ",
+    delivery: "Giao hàng trong 24h",
+    image: "",
+    origin: "Mỹ",
+  }));
+};
+
+export default function YouMayAlsoLike({
+  currentProduct,
+  onAddToCart,
+}: YouMayAlsoLikeProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const products = React.useMemo(() => generateAccessoryProducts(), []);
+  const totalPages = Math.ceil(products.length / 5);
+  const startIndex = (currentPage - 1) * 5;
+  const visibleProducts = products.slice(startIndex, startIndex + 5);
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-4 border-t border-slate-200">
-      <h2 className="text-[24px] font-bold text-[#0F1111] mb-2">
+    <div className="py-6 border-t border-slate-200">
+      <h2 className="text-[22px] font-bold text-[#222] mb-4">
         Phụ kiện & sản phẩm tương thích
       </h2>
 
-      <div className="flex flex-wrap gap-2 text-[14px] text-[#007185] mb-4">
-        {CATEGORIES.map((cat, i) => (
-          <React.Fragment key={cat}>
-            <span className="hover:underline cursor-pointer">Shop {cat}</span>
-            {i < CATEGORIES.length - 1 && (
-              <span className="text-slate-300">|</span>
-            )}
-          </React.Fragment>
+      <div className="grid grid-cols-5 gap-3 overflow-x-hidden pb-4">
+        {visibleProducts.map((product, index) => (
+          <ProductGridCard
+            key={`${product.id}-${index}`}
+            product={product}
+            onAddToCart={onAddToCart}
+          />
         ))}
-      </div>
-
-      <div className="relative mb-6">
-        <div className="flex gap-4 overflow-x-hidden pb-4">
-          {products.map((product, index) => (
-            <ProductCard key={index} product={product} />
-          ))}
-        </div>
       </div>
 
       <div className="flex items-center justify-center gap-6 mt-4">
         <button
           onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-          className="p-1 hover:bg-slate-100 rounded-full transition-colors"
+          className="p-2 hover:bg-slate-100 rounded-full transition-colors"
         >
           <ChevronLeft size={24} className="text-slate-600" />
         </button>
-        <span className="text-[16px] text-slate-700">
-          {currentPage} of {totalPages}
+        <span className="text-[14px] text-slate-700 font-medium">
+          {currentPage} / {totalPages}
         </span>
         <button
           onClick={() =>
             setCurrentPage((prev) => Math.min(totalPages, prev + 1))
           }
-          className="p-1 hover:bg-slate-100 rounded-full transition-colors"
+          className="p-2 hover:bg-slate-100 rounded-full transition-colors"
         >
           <ChevronRight size={24} className="text-slate-600" />
         </button>

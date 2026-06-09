@@ -421,7 +421,7 @@ export default function SubcategoryPage({ onAddToCart }: SubcategoryPageProps) {
       </div>
 
       <div className="mt-16 bg-white">
-        <ShopTopSellers subcategoryName={displayTitle} />
+        <ShopTopSellers subcategoryName={displayTitle} onAddToCart={onAddToCart} />
         <AboutCategory title={`Giới thiệu về ${displayTitle}`} />
         <CategoryFAQ />
         <ExploreMoreProducts />

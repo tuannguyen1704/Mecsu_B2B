@@ -35,7 +35,7 @@ export default function SearchSuggestionDropdown({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.15 }}
-          className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-slate-200 shadow-2xl z-[1000] overflow-hidden"
+          className="absolute top-full left-0 right-0 mt-2 bg-white rounded-md border border-slate-200 shadow-2xl z-[1000] overflow-hidden"
         >
           {/* Suggestions List */}
           {hasResults && (

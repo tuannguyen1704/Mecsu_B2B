@@ -126,6 +126,9 @@ export const orderStorage = {
             image: '/assets/Bulong Inox 304 DIN933 M3x20.jpg',
           },
         ],
+        timestamps: [
+          new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        ],
       },
       {
         id: `order-demo-2-${Date.now()}`,
@@ -146,6 +149,12 @@ export const orderStorage = {
             price: 1560000,
             image: '/assets/Dai Oc Inox 304 DIN934 M6.jpg',
           },
+        ],
+        timestamps: [
+          new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 2 * 60 * 1000).toISOString(),
+          new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 10 * 60 * 1000).toISOString(),
+          new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000).toISOString(),
         ],
       },
       {
@@ -175,6 +184,11 @@ export const orderStorage = {
             price: 2100000,
             image: '/assets/Keo Dan CN.jpg',
           },
+        ],
+        timestamps: [
+          new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 3 * 60 * 1000).toISOString(),
+          new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 8 * 60 * 1000).toISOString(),
         ],
       },
     ];
@@ -272,6 +286,13 @@ export const orderStorage = {
           image: item.image || '',
         };
       }),
+      timestamps: [
+        new Date().toISOString(),
+        new Date(Date.now() + 1 * 60 * 1000).toISOString(),
+        new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      ],
     };
 
     return order;

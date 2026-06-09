@@ -31,7 +31,7 @@ const PROMOTIONS = [
 const PromotionBanners = () => {
   return (
     <section className="bg-white pt-[14px] pb-0 border-b border-slate-100">
-      <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6">
+      <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6">
         {PROMOTIONS.map((promo, idx) => {
           const displayImage = promo.image;
           
@@ -50,7 +50,7 @@ const PromotionBanners = () => {
                   <img 
                     src={displayImage} 
                     alt={promo.title} 
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                    className="w-full h-full object-cover rounded-t-md transition-transform duration-1000 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-500" />
                 </div>

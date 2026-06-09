@@ -128,7 +128,7 @@ export default function SearchBar({
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
       <motion.div
-        className={`relative flex items-center bg-white border-2 rounded-xl overflow-hidden transition-all ${
+        className={`relative flex items-center bg-white border-2 rounded-md overflow-hidden transition-all ${
           isFocused
             ? 'border-brand-primary shadow-lg shadow-brand-primary/20'
             : 'border-slate-200 hover:border-slate-300'

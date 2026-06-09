@@ -116,7 +116,7 @@ export default function ProfilePopup({ isOpen, onClose, notifications, onMarkAll
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition-all ${
+                  className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-all ${
                     activeTab === tab
                       ? 'bg-[#173E75] text-white border border-[#173E75]'
                       : 'bg-white text-[#475569] border border-[#CBD5E1] hover:border-[#94A3B8]'
@@ -128,8 +128,9 @@ export default function ProfilePopup({ isOpen, onClose, notifications, onMarkAll
             </div>
 
             {/* Notification List */}
-            <div className="flex-1 overflow-y-auto min-h-0" style={{
-              maxHeight: 360,
+            <div className="flex-shrink-0 overflow-y-auto flex flex-col" style={{
+              height: 360,
+              minHeight: 360,
               scrollbarWidth: 'thin',
               scrollbarColor: '#CBD5E1 transparent',
             }}>
@@ -162,7 +163,7 @@ export default function ProfilePopup({ isOpen, onClose, notifications, onMarkAll
                   return (
                     <div
                       key={n.id}
-                      className={`px-5 py-4 border-b border-[#F1F5F9] flex gap-3 cursor-pointer transition-colors hover:bg-[#F8FAFC] ${!n.read ? 'bg-[#F8FBFF]' : ''}`}
+                      className={`mb-2 last:mb-0 py-4 border border-[#F1F5F9] flex gap-3 cursor-pointer transition-colors hover:bg-[#F8FAFC] rounded-md ${!n.read ? 'bg-[#F8FBFF]' : ''}`}
                       onClick={() => {
                         if (n.orderId) {
                           navigate(`/tai-khoan/don-hang/${n.orderId}`);
@@ -205,9 +206,11 @@ export default function ProfilePopup({ isOpen, onClose, notifications, onMarkAll
                   );
                 })
               ) : (
-                <div className="py-16 text-center px-8">
-                  <Bell size={36} className="mx-auto text-[#E5E7EB] mb-3" />
-                  <p className="text-[13px] font-medium text-[#94A3B8]">Không có thông báo nào</p>
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <Bell size={36} className="mx-auto text-[#E5E7EB] mb-3" />
+                    <p className="text-[13px] font-medium text-[#94A3B8]">Không có thông báo nào</p>
+                  </div>
                 </div>
               )}
             </div>

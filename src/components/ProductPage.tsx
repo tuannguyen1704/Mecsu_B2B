@@ -224,7 +224,7 @@ export default function ProductPage({ product, onBack, onAddToCart, onSelectRela
           <ProductInformation />
         </div>
         <div id="related-products">
-          <YouMayAlsoLike />
+          <YouMayAlsoLike onAddToCart={onAddToCart} />
         </div>
         <div id="customer-reviews">
           <CustomerReviews product={product} />

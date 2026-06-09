@@ -86,6 +86,7 @@ export interface Order {
   recipientName?: string;
   phone?: string;
   items: OrderItem[];
+  timestamps?: string[];
 }
 
 export interface ReorderItem {

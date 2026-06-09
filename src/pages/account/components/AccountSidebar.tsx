@@ -161,7 +161,7 @@ const SidebarContent: React.FC<{ user: AccountUser; onClose?: () => void }> = ({
 // Desktop Sidebar - always visible in the grid
 export const DesktopSidebar: React.FC<{ user: AccountUser }> = ({ user }) => {
   return (
-    <aside className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <aside className="bg-white rounded-md border border-slate-200 overflow-hidden">
       <SidebarContent user={user} />
     </aside>
   );

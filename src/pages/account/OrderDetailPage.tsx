@@ -53,6 +53,7 @@ interface Order {
   total: number;
   shippingLat?: number;
   shippingLng?: number;
+  timestamps?: string[];
 }
 
 const MOCK_ORDER: Order = {
@@ -87,6 +88,13 @@ const MOCK_ORDER: Order = {
   discount: 0,
   vat: 350000,
   total: 2850000,
+  timestamps: [
+    "2025-05-15T09:37:00",
+    "2025-05-15T09:38:00",
+    "2025-05-15T09:45:00",
+    "2025-05-15T10:05:00",
+    "2025-05-15T10:30:00",
+  ],
 };
 
 const formatPrice = (price: number) => {
@@ -153,6 +161,7 @@ const OrderDetailPage: React.FC = () => {
         total: storedOrder.totalAmount,
         shippingLat: (storedOrder as any).shippingLat,
         shippingLng: (storedOrder as any).shippingLng,
+        timestamps: (storedOrder as any).timestamps,
       }
     : null;
 
@@ -250,7 +259,7 @@ const OrderDetailPage: React.FC = () => {
               <h2 className="text-lg font-bold text-slate-900 mb-6">
                 Trạng thái đơn hàng
               </h2>
-              <OrderStatusBar status={order.status as any} size="md" />
+              <OrderStatusBar status={order.status as any} size="md" timestamps={order.timestamps} />
             </div>
 
             {/* Products in Order */}

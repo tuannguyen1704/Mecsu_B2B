@@ -32,7 +32,7 @@ export default function AccountCreationAndDeals() {
               <p className="text-sm text-slate-700 mb-8 font-medium">Terms apply</p>
             </div>
             
-            <button className="w-full bg-[#264553] hover:bg-[#1a313b] transition-colors text-white font-bold text-[16px] py-4">
+            <button className="w-full bg-[#163F78] hover:bg-[#0e2d5a] transition-colors text-white font-bold text-[16px] py-4 rounded-md">
               Create Account
             </button>
           </div>

@@ -206,7 +206,7 @@ export default function Home({
                 onSearch={(keyword) => {
                   navigate(`/search?q=${encodeURIComponent(keyword)}`);
                 }}
-                className="[&_.relative]:!bg-white [&_.relative]:!border-2 [&_.relative]:!border-white/50 [&_.relative]:!rounded-xl [&_.relative]:!overflow-hidden [&_.relative]:!h-[60px]"
+                className="[&_.relative]:!bg-white [&_.relative]:!border-2 [&_.relative]:!border-white/50 [&_.relative]:!rounded-md [&_.relative]:!overflow-hidden [&_.relative]:!h-[60px]"
               />
             </div>
 
@@ -279,7 +279,6 @@ export default function Home({
 
       {/* 1. Promotion Banners - Semantic & Visual */}
       <PromotionBanners />
-
       {/* 1.5 Recommendations Widget Grid */}
       <Suspense
         fallback={

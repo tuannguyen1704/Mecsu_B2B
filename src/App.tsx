@@ -49,6 +49,7 @@ const QuotationCenter = lazy(() => import('./pages/account/QuotationCenter'));
 const QuotationDetailPage = lazy(() => import('./pages/account/QuotationDetailPage'));
 const CustomerSupportPage = lazy(() => import('./pages/account/CustomerSupportPage'));
 const MarketingEmailSettingsPage = lazy(() => import('./pages/account/MarketingEmailSettingsPage'));
+const WishlistPage = lazy(() => import('./pages/account/WishlistPage'));
 
 // UI Components
 import OrderSuccessPage from './components/OrderSuccessPage';
@@ -292,20 +293,19 @@ const CartApp = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [navigate]);
 
-  const handleAddToCart = React.useCallback((product: Product, quantity: number) => {
-    setCartItems(prev => {
-      const existing = prev.find(item => item.product.id === product.id);
+  const mockAddToCart = (product: Product, quantity: number) => {
+    setCartItems((prev) => {
+      const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
-        return prev.map(item => 
-          item.product.id === product.id 
-            ? { ...item, quantity: item.quantity + quantity } 
-            : item
+        return prev.map((item) =>
+          item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item,
         );
       }
       return [...prev, { product, quantity }];
     });
     setCartPopupItem({ product, quantity });
-  }, []);
+  };
+
 
   const handleUpdateCartQuantity = React.useCallback((productId: string, quantity: number) => {
     setCartItems(prev => prev.map(item => 
@@ -470,13 +470,13 @@ const isCartView = false; // Always render Header and Footer
           isCategoryOpen={isCategoryOpen}
           setIsCategoryOpen={setIsCategoryOpen}
           cartPopupItem={cartPopupItem}
-          onCloseCartPopup={() => setCartPopupItem(null)}
+          onCloseCartPopup={React.useCallback(() => setCartPopupItem(null), [])}
           onNavigateToCheckout={handleNavigateToCheckout}
-          onAddToCart={handleAddToCart}
+          onAddToCart={mockAddToCart}
           isHomePage={location.pathname === '/'}
           disableSticky={isAccountRoute || isListingRoute}
           orderJustCompleted={orderJustCompleted}
-          onOrderAnimationComplete={() => setOrderJustCompleted(false)}
+          onOrderAnimationComplete={React.useCallback(() => setOrderJustCompleted(false), [])}
         />
       )}
 
@@ -493,7 +493,7 @@ const isCartView = false; // Always render Header and Footer
             <ProductPage
               product={activeProduct}
               onBack={() => setActiveProduct(null)}
-              onAddToCart={handleAddToCart}
+              onAddToCart={mockAddToCart}
               onSelectRelated={handleNavigateToDetails}
             />
           ) : (
@@ -508,7 +508,7 @@ const isCartView = false; // Always render Header and Footer
                 setCurrentPage={setCurrentPage}
                 itemsPerPage={itemsPerPage}
                 totalPages={totalPages}
-                handleAddToCart={handleAddToCart}
+                mockAddToCart={mockAddToCart}
                 handleQuickView={handleQuickView}
                 handleNavigateToDetails={handleNavigateToDetails}
                 handleNavigateToCategories={handleNavigateToCategories}
@@ -565,11 +565,11 @@ const isCartView = false; // Always render Header and Footer
             } />
 
             <Route path="/danh-muc/:categoryId/:subSlug" element={
-              <SubcategoryPage onAddToCart={handleAddToCart} />
+              <SubcategoryPage onAddToCart={mockAddToCart} />
             } />
 
             <Route path="/search" element={
-              <SearchResults onAddToCart={handleAddToCart} />
+              <SearchResults onAddToCart={mockAddToCart} />
             } />
 
             <Route path="/dich-vu-khach-hang" element={
@@ -630,7 +630,11 @@ const isCartView = false; // Always render Header and Footer
             } />
 
             <Route path="/tai-khoan/bao-gia/:id" element={
-              <QuotationDetailPage />
+              <QuotationDetailPage onAddToCart={mockAddToCart} />
+            } />
+
+            <Route path="/tai-khoan/danh-sach" element={
+              <WishlistPage />
             } />
 
             <Route path="/tai-khoan/ho-tro" element={
@@ -663,7 +667,7 @@ const isCartView = false; // Always render Header and Footer
             <Route path="/san-pham/:productId" element={
               <ProductDetailRoute
                 onBack={handleBackToHome}
-                onAddToCart={handleAddToCart}
+                onAddToCart={mockAddToCart}
                 onSelectRelated={handleNavigateToDetails}
               />
             } />
@@ -671,7 +675,7 @@ const isCartView = false; // Always render Header and Footer
             <Route path="*" element={
               <UnifiedRouteHandler 
                 onBack={handleBackToHome}
-                onAddToCart={handleAddToCart}
+                onAddToCart={mockAddToCart}
                 onSelectRelated={handleNavigateToDetails}
               />
             } />
@@ -687,7 +691,7 @@ const isCartView = false; // Always render Header and Footer
           setIsQuickViewOpen(false);
           setSelectedProduct(null);
         }} 
-        onAddToCart={handleAddToCart}
+        onAddToCart={mockAddToCart}
       />
 
       <OrderTrackingModal 

@@ -28,7 +28,7 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({ children }) => {
         </div>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-4 lg:px-6 pt-1 pb-3 lg:pt-2 lg:pb-4">
+      <div className="mx-auto px-2 lg:px-3 pt-1 pb-3 lg:pt-2 lg:pb-4">
         {/* Main Layout */}
         <div className="flex gap-4 lg:gap-4 items-start">
           {/* Desktop Sidebar - Sticky */}
